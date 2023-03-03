@@ -1,0 +1,106 @@
+/*-- scss:defaults --*/
+
+$theme: "syke" !default;
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap');
+
+// Color system
+// Main colors
+$white: #fff !default;
+$syke-darkgreen: #005854 !default;
+$syke-green: #84C497 !default;
+$syke-red: #F28E77 !default;
+$syke-blue: #64C1CB !default;
+$syke-gray: #E4E3DE !default;
+$black: #000 !default;
+
+// Additional colors
+$syke-lightgreen: #C7E3D2 !default;
+$syke-lightred: #FCD9C9 !default;
+$syke-darkred: #B34733 !default;
+$syke-lightblue: #CFE9EA !default;
+$syke-darkblue: #006085 !default;
+$syke-lightyellow: #FED992 !default;
+$syke-darkgray: #575756 !default;
+$syke-ocra: #BB5B0F !default;
+
+// Definitions
+$body-color: $syke-darkgreen !default;
+$link-color: $syke-blue !default;
+$selection-bg: $syke-red !default;
+
+$primary: $syke-darkgreen !default;
+$secondary: $syke-green !default;
+$success: $syke-red !default;
+$info: $syke-blue !default;
+$warning: $syke-lightred !default;
+$danger: $syke-darkred !default;
+$light: $syke-gray !default;
+$dark: $syke-darkgray !default;
+
+$min-contrast-ratio: 1.36 !default;
+
+$code-block-bg: $syke-gray;
+
+$code-color: $black;
+$code-bg: $syke-gray;
+
+// Options
+
+$enable-rounded: false !default;
+
+// Body
+
+$body-color: $primary !default;
+
+// Links
+
+$link-hover-color: $secondary !default;
+
+// Tables
+
+$table-border-color: $primary !default;
+
+// Fonts
+$font-family-sans-serif: "Poppins", sans-serif !default;
+$font-size: 12px;
+
+$h1-font-size:40px;
+$h2-font-size:35px;
+$h3-font-size:30px;
+$h4-font-size:25px;
+$h5-font-size:20px;
+$h6-font-size:15px;
+
+// Sidebar
+
+$sidebar-bg: transparent;
+$sidebar-fg: $primary;
+$sidebar-hl: $link-color;
+
+// Navbar
+
+$navbar-bg: $primary;
+$navbar-fg: $white;
+
+// TOC
+
+$toc-active-border: $link-color;
+$toc-inactive-border: $primary; 
+
+/*-- scss:rules --*/
+
+
+// Blockquotes
+
+.blockquote {
+    background-color: $primary;
+    color: $white;
+    border-left: 0;
+}
+
+// Numbered headers coloring
+
+.header-section-number {
+    color: $secondary;
+}
