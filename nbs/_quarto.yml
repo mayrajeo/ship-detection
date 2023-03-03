@@ -9,34 +9,34 @@ project:
     - data_creation.ipynb
     - cv-results.ipynb
     
-  format:
-    html:
-      theme: syke.scss
-      toc: true
-      page-layout: full
-      
-  website:
-    title: "Ship and boat detection from Sentinel 2 data"
-    description: "Ship and boat detection from Sentinel 2 data"
-    twitter-card:
-      creator: "@mayrajeo"
-    open-graph: true
-    reader-mode: true
-    repo-branch: main
-    repo-subdir: nbs
-    repo-url: https://github.com/mayrajeo/ship-detection
-    repo-actions: [source]
-    navbar:
-      background: primary
-      search: true
-      right:
-        - icon: github
-          href: https://github.com/mayrajeo/ship-detection
-    sidebar:
-      style: "floating"
-      contents:
-        - text: Introduction
-          file: index.ipynb
-        - data_creation.ipynb
-        - cv-results.ipynb
-    page-navigation: true
+format:
+  html:
+    theme: syke.scss
+    toc: true
+    page-layout: full
+    
+website:
+  title: "Ship and boat detection from Sentinel 2 data"
+  description: "Ship and boat detection from Sentinel 2 data"
+  twitter-card:
+    creator: "@mayrajeo"
+  open-graph: true
+  reader-mode: true
+  repo-branch: main
+  repo-subdir: nbs
+  repo-url: https://github.com/mayrajeo/ship-detection
+  repo-actions: [source]
+  navbar:
+    background: primary
+    search: true
+    right:
+      - icon: github
+        href: https://github.com/mayrajeo/ship-detection
+  sidebar:
+    style: "floating"
+    contents:
+      - text: Introduction
+        file: index.ipynb
+      - data_creation.ipynb
+      - cv-results.ipynb
+  page-navigation: true
