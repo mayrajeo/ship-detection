@@ -16,8 +16,8 @@ project:
       page-layout: full
       
   website:
-    title: "Ship and boat detection from Sentinel 2 data
-    description: "Ship and boat detection from Sentinel 2 data
+    title: "Ship and boat detection from Sentinel 2 data"
+    description: "Ship and boat detection from Sentinel 2 data"
     twitter-card:
       creator: "@mayrajeo"
     open-graph: true
