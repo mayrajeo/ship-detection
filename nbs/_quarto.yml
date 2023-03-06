@@ -7,7 +7,7 @@ project:
   render:
     - index.ipynb
     - data_creation.ipynb
-    - cv_results.ipynb
+    - detection_results.ipynb
     
 format:
   html:
@@ -38,5 +38,5 @@ website:
       - text: Introduction
         file: index.ipynb
       - data_creation.ipynb
-      - cv_results.ipynb
+      - detection_results.ipynb
   page-navigation: true
