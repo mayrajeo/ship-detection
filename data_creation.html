@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.2.335">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Janne Mäyrä">
+<meta name="dcterms.date" content="2023-03-10">
+
+<title>Ship and boat detection from Sentinel 2 data - Data creation</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./detection_results.html" rel="next">
+<link href="./index.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+<script src="https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js" crossorigin="anonymous"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<meta property="og:title" content="Ship and boat detection from Sentinel 2 data - Data creation">
+<meta property="og:description" content="Mostly cloudless Sentinel 2 mosaics were acquired from Copernicus Open Access Hub as L1C products, which were then converted to RGB mosaics with similar color corrections that are used in Tarkka…">
+<meta property="og:site-name" content="Ship and boat detection from Sentinel 2 data">
+<meta name="twitter:title" content="Ship and boat detection from Sentinel 2 data - Data creation">
+<meta name="twitter:description" content="Mostly cloudless Sentinel 2 mosaics were acquired from Copernicus Open Access Hub as L1C products, which were then converted to RGB mosaics with similar color corrections that are used in Tarkka…">
+<meta name="twitter:creator" content="@mayrajeo">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Ship and boat detection from Sentinel 2 data</span>
+    </a>
+  </div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mayrajeo/ship-detection"><i class="bi bi-github" role="img">
+</i> 
+ <span class="menu-text"></span></a>
+  </li>  
+</ul>
+              <div class="quarto-toggle-container">
+                  <a href="" class="quarto-reader-toggle nav-link" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+              </div>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+    <div class="container-fluid d-flex justify-content-between">
+      <h1 class="quarto-secondary-nav-title">Data creation</h1>
+      <button type="button" class="quarto-btn-toggle btn" aria-label="Show secondary navigation">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">Introduction</a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./data_creation.html" class="sidebar-item-text sidebar-link active">Data creation</a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./detection_results.html" class="sidebar-item-text sidebar-link">Detection results</a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul class="collapse">
+  <li><a href="#satellite-data" id="toc-satellite-data" class="nav-link active" data-scroll-target="#satellite-data">Satellite data</a></li>
+  <li><a href="#ship-and-boat-data" id="toc-ship-and-boat-data" class="nav-link" data-scroll-target="#ship-and-boat-data">Ship and boat data</a>
+  <ul class="collapse">
+  <li><a href="#train-and-validation-areas" id="toc-train-and-validation-areas" class="nav-link" data-scroll-target="#train-and-validation-areas">Train and validation areas</a></li>
+  <li><a href="#test-areas" id="toc-test-areas" class="nav-link" data-scroll-target="#test-areas">Test areas</a></li>
+  </ul></li>
+  <li><a href="#quick-data-analysis-for-the-annotated-ships" id="toc-quick-data-analysis-for-the-annotated-ships" class="nav-link" data-scroll-target="#quick-data-analysis-for-the-annotated-ships">Quick data analysis for the annotated ships</a>
+  <ul class="collapse">
+  <li><a href="#bounding-box-area" id="toc-bounding-box-area" class="nav-link" data-scroll-target="#bounding-box-area">Bounding box area</a></li>
+  <li><a href="#diameter" id="toc-diameter" class="nav-link" data-scroll-target="#diameter">Diameter</a></li>
+  </ul></li>
+  <li><a href="#aspect-ratio" id="toc-aspect-ratio" class="nav-link" data-scroll-target="#aspect-ratio">Aspect ratio</a></li>
+  <li><a href="#training-and-validation-data-generation" id="toc-training-and-validation-data-generation" class="nav-link" data-scroll-target="#training-and-validation-data-generation">Training and validation data generation</a></li>
+  </ul>
+<div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/mayrajeo/ship-detection/blob/main/nbs/data_creation.ipynb" class="toc-action">View source</a></p></div></div></nav>
+    </div>
+<!-- main -->
+<main class="content column-body" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title d-none d-lg-block">Data creation</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Janne Mäyrä </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">March 10, 2023</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+</header>
+
+<div class="cell" data-execution_count="96">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> rasterio <span class="im">as</span> rio</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> rasterio.plot <span class="im">as</span> rio_plot</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> geopandas <span class="im">as</span> gpd</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> shapely.geometry <span class="im">import</span> Point</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shapely</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="satellite-data" class="level1">
+<h1>Satellite data</h1>
+<p>Mostly cloudless Sentinel 2 mosaics were acquired from <a href="https://scihub.copernicus.eu/dhus/#/home">Copernicus Open Access Hub</a> as L1C products, which were then converted to RGB mosaics with similar color corrections that are used in <a href="https://syke.fi/tarkka">Tarkka</a> service.</p>
+<p>The following mosaics were used as the training and validation data:</p>
+<table class="table">
+<colgroup>
+<col style="width: 19%">
+<col style="width: 29%">
+<col style="width: 51%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Location</th>
+<th>Product name</th>
+<th>Number of annotations</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Archipelago sea</td>
+<td>S2B_MSIL1C_20220619T100029_N0400_R122_T34VEM_20220619T104419</td>
+<td>485</td>
+</tr>
+<tr class="even">
+<td>Archipelago sea</td>
+<td>S2A_MSIL1C_20220721T095041_N0400_R079_T34VEM_20220721T115325</td>
+<td>1317</td>
+</tr>
+<tr class="odd">
+<td>Archipelago sea</td>
+<td>S2A_MSIL1C_20220813T095601_N0400_R122_T34VEM_20220813T120233</td>
+<td>1205</td>
+</tr>
+<tr class="even">
+<td>Gulf of Finland</td>
+<td>S2B_MSIL1C_20220606T095029_N0400_R079_T35VLG_20220606T105944</td>
+<td>257</td>
+</tr>
+<tr class="odd">
+<td>Gulf of Finland</td>
+<td>S2B_MSIL1C_20220626T095039_N0400_R079_T35VLG_20220626T104321</td>
+<td>1097</td>
+</tr>
+<tr class="even">
+<td>Gulf of Finland</td>
+<td>S2A_MSIL1C_20220721T095041_N0400_R079_T35VLG_20220721T115325</td>
+<td>867</td>
+</tr>
+<tr class="odd">
+<td>Bothnian Bay</td>
+<td>S2A_MSIL1C_20220627T100611_N0400_R022_T34WFT_20220627T134958</td>
+<td>112</td>
+</tr>
+<tr class="even">
+<td>Bothnian Bay</td>
+<td>S2B_MSIL1C_20220712T100559_N0400_R022_T34WFT_20220712T121613</td>
+<td>149</td>
+</tr>
+<tr class="odd">
+<td>Bothnian Bay</td>
+<td>S2B_MSIL1C_20220828T095549_N0400_R122_T34WFT_20220828T104748</td>
+<td>72</td>
+</tr>
+</tbody>
+</table>
+<p>The following mosaics were used as test data:</p>
+<table class="table">
+<colgroup>
+<col style="width: 19%">
+<col style="width: 29%">
+<col style="width: 51%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Location</th>
+<th>Product name</th>
+<th>Number of annotations</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Archipelago sea</td>
+<td>S2B_MSIL1C_20210714T100029_N0301_R122_T34VEN_20210714T121056</td>
+<td>558</td>
+</tr>
+<tr class="even">
+<td>Archipelago sea</td>
+<td>S2A_MSIL1C_20220624T100041_N0400_R122_T34VEN_20220624T120211</td>
+<td>575</td>
+</tr>
+<tr class="odd">
+<td>Archipelago sea</td>
+<td>S2A_MSIL1C_20220813T095601_N0400_R122_T34VEN_20220813T120233</td>
+<td>581</td>
+</tr>
+<tr class="even">
+<td>Kvarken</td>
+<td>S2A_MSIL1C_20220826T100611_N0400_R022_T34VER_20220826T135136</td>
+<td>66</td>
+</tr>
+<tr class="odd">
+<td>Kvarken</td>
+<td>S2B_MSIL1C_20220712T100559_N0400_R022_T34VER_20220712T121613</td>
+<td>152</td>
+</tr>
+<tr class="even">
+<td>Kvarken</td>
+<td>S2A_MSIL1C_20220826T100611_N0400_R022_T34VER_20220826T135136</td>
+<td>67</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ship-and-boat-data" class="level1">
+<h1>Ship and boat data</h1>
+<p>We manually annotated all visible boats and ships from the RGB satellite mosaics from 15 Sentinel 2 products by drawing a bounding box around them, and saved them into shapefiles so that each shapefile corresponded to a single RGB mosaic. These data cover five separate grid tiles, and each grid tile was annotated from three separate time periods in order to capture more diverse conditions in the sea and different cloud coverage. Images from multiple acquisition dates were also used to identify smaller boats: As these boats only cover a couple of pixels, the identification was done by comparing several images and if a potential boat was not present in all images, it was annotated. The grid tiles were split into train, validation and test sets so that training and validation set contained 3 tiles and test set contained 2 tiles. The training and validation sets were further split into five equal sized folds</p>
+<p>As it is easier to just leave <code>id</code> empty in QGIS, add the information to shapefiles.</p>
+<div class="cell" data-execution_count="3">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>image_path <span class="op">=</span> Path(<span class="st">'../data/rgb_mosaics/'</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>shp_path <span class="op">=</span> Path(<span class="st">'../data/annotated_ships'</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t_id <span class="kw">in</span> [<span class="st">'34VEM'</span>, <span class="st">'35VLG'</span>, <span class="st">'34WFT'</span>, <span class="st">'34VEN'</span>, <span class="st">'34VER'</span>]:</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    mosaics <span class="op">=</span> [f <span class="cf">for</span> f <span class="kw">in</span> os.listdir(image_path<span class="op">/</span>t_id) <span class="cf">if</span> <span class="st">'tif'</span> <span class="kw">in</span> f]</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> t <span class="kw">in</span> mosaics:</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>        ships <span class="op">=</span> gpd.read_file(shp_path<span class="op">/</span>t_id<span class="op">/</span>t.replace(<span class="st">'tif'</span>, <span class="st">'shp'</span>))</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        ships[<span class="st">'id'</span>] <span class="op">=</span> <span class="st">'boat'</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>        ships.to_file(shp_path<span class="op">/</span>t_id<span class="op">/</span>t.replace(<span class="st">'tif'</span>, <span class="st">'shp'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="train-and-validation-areas" class="level2">
+<h2 class="anchored" data-anchor-id="train-and-validation-areas">Train and validation areas</h2>
+<div class="cell" data-execution_count="4">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">1</span>,<span class="dv">3</span>, dpi<span class="op">=</span><span class="dv">200</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">5</span>))</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t, a <span class="kw">in</span> <span class="bu">zip</span>([<span class="st">'20220619.tif'</span>,<span class="st">'20220721.tif'</span>, <span class="st">'20220813.tif'</span>], axs):</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    a.axis(<span class="st">'off'</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(image_path<span class="op">/</span><span class="st">'34VEM'</span><span class="op">/</span>t) <span class="im">as</span> src:</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        rio_plot.show(src, ax<span class="op">=</span>a)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    ships <span class="op">=</span> gpd.read_file(shp_path<span class="op">/</span><span class="st">'34VEM'</span><span class="op">/</span>t.replace(<span class="st">'tif'</span>, <span class="st">'shp'</span>))</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    ships[<span class="st">'geometry'</span>] <span class="op">=</span> ships.geometry.centroid</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    ships.plot(ax<span class="op">=</span>a, color<span class="op">=</span><span class="st">'red'</span>, markersize<span class="op">=</span><span class="fl">.5</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    n_ships <span class="op">=</span> <span class="bu">len</span>(ships)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    ships <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    a.set_title(<span class="ss">f'</span><span class="sc">{</span>t[:<span class="op">-</span><span class="dv">4</span>]<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>n_ships<span class="sc">}</span><span class="ss"> boats'</span>)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>plt.suptitle(<span class="st">'Achipelago sea'</span>)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="data_creation_files/figure-html/cell-4-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<div class="cell" data-execution_count="5">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">1</span>,<span class="dv">3</span>, dpi<span class="op">=</span><span class="dv">200</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">5</span>))</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t, a <span class="kw">in</span> <span class="bu">zip</span>([<span class="st">'20220606.tif'</span>,<span class="st">'20220626.tif'</span>, <span class="st">'20220721.tif'</span>], axs):</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    a.axis(<span class="st">'off'</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(image_path<span class="op">/</span><span class="st">'35VLG'</span><span class="op">/</span>t) <span class="im">as</span> src:</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        rio_plot.show(src, ax<span class="op">=</span>a)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    ships <span class="op">=</span> gpd.read_file(shp_path<span class="op">/</span><span class="st">'35VLG'</span><span class="op">/</span>t.replace(<span class="st">'tif'</span>, <span class="st">'shp'</span>))</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    ships[<span class="st">'geometry'</span>] <span class="op">=</span> ships.geometry.centroid</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    ships.plot(ax<span class="op">=</span>a, color<span class="op">=</span><span class="st">'red'</span>, markersize<span class="op">=</span><span class="fl">.5</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    n_ships <span class="op">=</span> <span class="bu">len</span>(ships)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    ships <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    a.set_title(<span class="ss">f'</span><span class="sc">{</span>t[:<span class="op">-</span><span class="dv">4</span>]<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>n_ships<span class="sc">}</span><span class="ss"> boats'</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>plt.suptitle(<span class="st">'Gulf of Finland, Helsinki-Tallinn'</span>)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="data_creation_files/figure-html/cell-5-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<div class="cell" data-execution_count="6">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">1</span>,<span class="dv">3</span>, dpi<span class="op">=</span><span class="dv">200</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">5</span>))</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t, a <span class="kw">in</span> <span class="bu">zip</span>([<span class="st">'20220627.tif'</span>,<span class="st">'20220712.tif'</span>, <span class="st">'20220828.tif'</span>], axs):</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    a.axis(<span class="st">'off'</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(image_path<span class="op">/</span><span class="st">'34WFT'</span><span class="op">/</span>t) <span class="im">as</span> src:</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        rio_plot.show(src, ax<span class="op">=</span>a)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    ships <span class="op">=</span> gpd.read_file(shp_path<span class="op">/</span><span class="st">'34WFT'</span><span class="op">/</span>t.replace(<span class="st">'tif'</span>, <span class="st">'shp'</span>))</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    ships[<span class="st">'geometry'</span>] <span class="op">=</span> ships.geometry.centroid</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    ships.plot(ax<span class="op">=</span>a, color<span class="op">=</span><span class="st">'red'</span>, markersize<span class="op">=</span><span class="fl">.5</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    n_ships <span class="op">=</span> <span class="bu">len</span>(ships)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    ships <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    a.set_title(<span class="ss">f'</span><span class="sc">{</span>t[:<span class="op">-</span><span class="dv">4</span>]<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>n_ships<span class="sc">}</span><span class="ss"> boats'</span>)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>plt.suptitle(<span class="st">'Bothnian Bay'</span>)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="data_creation_files/figure-html/cell-6-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="test-areas" class="level2">
+<h2 class="anchored" data-anchor-id="test-areas">Test areas</h2>
+<div class="cell" data-execution_count="7">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">1</span>,<span class="dv">3</span>, dpi<span class="op">=</span><span class="dv">200</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">5</span>))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t, a <span class="kw">in</span> <span class="bu">zip</span>([<span class="st">'20210714.tif'</span>, <span class="st">'20220624.tif'</span>, <span class="st">'20220813.tif'</span>], axs):</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    a.axis(<span class="st">'off'</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(image_path<span class="op">/</span><span class="st">'34VEN'</span><span class="op">/</span>t) <span class="im">as</span> src:</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        rio_plot.show(src, ax<span class="op">=</span>a)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    ships <span class="op">=</span> gpd.read_file(shp_path<span class="op">/</span><span class="st">'34VEN'</span><span class="op">/</span>t.replace(<span class="st">'tif'</span>, <span class="st">'shp'</span>))</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    ships[<span class="st">'geometry'</span>] <span class="op">=</span> ships.geometry.centroid</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    ships.plot(ax<span class="op">=</span>a, color<span class="op">=</span><span class="st">'red'</span>, markersize<span class="op">=</span><span class="fl">.5</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    n_ships <span class="op">=</span> <span class="bu">len</span>(ships)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    ships <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    a.set_title(<span class="ss">f'</span><span class="sc">{</span>t[:<span class="op">-</span><span class="dv">4</span>]<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>n_ships<span class="sc">}</span><span class="ss"> boats'</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>plt.suptitle(<span class="st">'Archipelago Sea'</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="data_creation_files/figure-html/cell-7-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<div class="cell" data-execution_count="8">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">1</span>,<span class="dv">3</span>, dpi<span class="op">=</span><span class="dv">200</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">5</span>))</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t, a <span class="kw">in</span> <span class="bu">zip</span>([<span class="st">'20220617.tif'</span>, <span class="st">'20220712.tif'</span>, <span class="st">'20220826.tif'</span>], axs):</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    a.axis(<span class="st">'off'</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(image_path<span class="op">/</span><span class="st">'34VER'</span><span class="op">/</span>t) <span class="im">as</span> src:</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        rio_plot.show(src, ax<span class="op">=</span>a)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    ships <span class="op">=</span> gpd.read_file(shp_path<span class="op">/</span><span class="st">'34VER'</span><span class="op">/</span>t.replace(<span class="st">'tif'</span>, <span class="st">'shp'</span>))</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    ships[<span class="st">'geometry'</span>] <span class="op">=</span> ships.geometry.centroid</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    ships.plot(ax<span class="op">=</span>a, color<span class="op">=</span><span class="st">'red'</span>, markersize<span class="op">=</span><span class="fl">.5</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    n_ships <span class="op">=</span> <span class="bu">len</span>(ships)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    ships <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    a.set_title(<span class="ss">f'</span><span class="sc">{</span>t[:<span class="op">-</span><span class="dv">4</span>]<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>n_ships<span class="sc">}</span><span class="ss"> boats'</span>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>plt.suptitle(<span class="st">'Kvarken'</span>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="data_creation_files/figure-html/cell-8-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="quick-data-analysis-for-the-annotated-ships" class="level1">
+<h1>Quick data analysis for the annotated ships</h1>
+<p>First collate all ships into a single dataframe and project them to <code>EPSG:3067</code>.</p>
+<div class="cell" data-execution_count="117">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>all_ships <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t_id <span class="kw">in</span> [<span class="st">'34VEM'</span>, <span class="st">'35VLG'</span>, <span class="st">'34WFT'</span>, <span class="st">'34VEN'</span>, <span class="st">'34VER'</span>]:</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    mosaics <span class="op">=</span> [f <span class="cf">for</span> f <span class="kw">in</span> os.listdir(image_path<span class="op">/</span>t_id) <span class="cf">if</span> <span class="st">'tif'</span> <span class="kw">in</span> f]</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> t <span class="kw">in</span> mosaics:</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        ships <span class="op">=</span> gpd.read_file(shp_path<span class="op">/</span>t_id<span class="op">/</span>t.replace(<span class="st">'tif'</span>, <span class="st">'shp'</span>))</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>        ships[<span class="st">'tile'</span>] <span class="op">=</span> <span class="ss">f'</span><span class="sc">{</span>t_id<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>t[:<span class="op">-</span><span class="dv">4</span>]<span class="sc">}</span><span class="ss">'</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> all_ships <span class="kw">is</span> <span class="va">None</span>: all_ships <span class="op">=</span> ships.to_crs(<span class="st">'epsg:3067'</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>: all_ships <span class="op">=</span> pd.concat([all_ships, ships.to_crs(<span class="st">'epsg:3067'</span>)])</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_meas(geom, meas<span class="op">=</span><span class="st">'diam'</span>):</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    box <span class="op">=</span> geom.minimum_rotated_rectangle</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    x, y <span class="op">=</span> box.exterior.coords.xy</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    edge_length <span class="op">=</span> (Point(x[<span class="dv">0</span>], y[<span class="dv">0</span>]).distance(Point(x[<span class="dv">1</span>], y[<span class="dv">1</span>])), Point(x[<span class="dv">1</span>], y[<span class="dv">1</span>]).distance(Point(x[<span class="dv">2</span>], y[<span class="dv">2</span>])))</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> meas <span class="op">==</span> <span class="st">'min_edge'</span>: <span class="cf">return</span> <span class="bu">min</span>(edge_length)</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> meas <span class="op">==</span> <span class="st">'max_edge'</span>: <span class="cf">return</span> <span class="bu">max</span>(edge_length)</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> meas <span class="op">==</span> <span class="st">'diam'</span>: <span class="cf">return</span> np.sqrt(edge_length[<span class="dv">0</span>]<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> edge_length[<span class="dv">1</span>]<span class="op">**</span><span class="dv">2</span>)</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_aspect_ratio(geom):</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    box <span class="op">=</span> shapely.geometry.polygon.orient(geom).minimum_rotated_rectangle</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    x, y <span class="op">=</span> box.exterior.coords.xy</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    w <span class="op">=</span> Point(<span class="bu">min</span>(x), <span class="bu">min</span>(y)).distance(Point(<span class="bu">max</span>(x), <span class="bu">min</span>(y)))</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    h <span class="op">=</span> Point(<span class="bu">min</span>(x), <span class="bu">min</span>(y)).distance(Point(<span class="bu">min</span>(x), <span class="bu">max</span>(y)))</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> w<span class="op">/</span>h</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>all_ships[<span class="st">'bbox_area'</span>] <span class="op">=</span> all_ships.geometry.area</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>all_ships[<span class="st">'min_edge'</span>] <span class="op">=</span> all_ships.geometry.<span class="bu">apply</span>(<span class="kw">lambda</span> row: get_meas(row, <span class="st">'min_edge'</span>))</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>all_ships[<span class="st">'max_edge'</span>] <span class="op">=</span> all_ships.geometry.<span class="bu">apply</span>(<span class="kw">lambda</span> row: get_meas(row, <span class="st">'max_edge'</span>))</span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>all_ships[<span class="st">'diam'</span>] <span class="op">=</span> all_ships.geometry.<span class="bu">apply</span>(<span class="kw">lambda</span> row: get_meas(row, <span class="st">'diam'</span>))</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>all_ships[<span class="st">'aspect_ratio'</span>] <span class="op">=</span> all_ships.geometry.<span class="bu">apply</span>(get_aspect_ratio)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Plot log-scaled histograms for bounding box area, diameter, shorter edge and longer edge.</p>
+<div class="cell" data-execution_count="127">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>,<span class="dv">2</span>, dpi<span class="op">=</span><span class="dv">150</span>, figsize<span class="op">=</span>(<span class="dv">12</span>,<span class="dv">12</span>))</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> axs.flatten(): a.grid(<span class="va">True</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>sns.histplot(all_ships.bbox_area, log_scale<span class="op">=</span><span class="va">False</span>, ax<span class="op">=</span>axs[<span class="dv">0</span>,<span class="dv">0</span>], kde<span class="op">=</span><span class="va">True</span>).set_title(<span class="st">'Bbox area (m²)'</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>sns.histplot(all_ships.diam, log_scale<span class="op">=</span><span class="va">False</span>, ax<span class="op">=</span>axs[<span class="dv">0</span>,<span class="dv">1</span>], kde<span class="op">=</span><span class="va">True</span>).set_title(<span class="st">'Diameter (m)'</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>sns.histplot(all_ships.min_edge, log_scale<span class="op">=</span><span class="va">False</span>, ax<span class="op">=</span>axs[<span class="dv">1</span>,<span class="dv">0</span>], kde<span class="op">=</span><span class="va">True</span>).set_title(<span class="st">'Shorter edge (m)'</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>sns.histplot(all_ships.max_edge, log_scale<span class="op">=</span><span class="va">False</span>, ax<span class="op">=</span>axs[<span class="dv">1</span>,<span class="dv">1</span>], kde<span class="op">=</span><span class="va">True</span>).set_title(<span class="st">'Longer edge (m)'</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="data_creation_files/figure-html/cell-10-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<section id="bounding-box-area" class="level2">
+<h2 class="anchored" data-anchor-id="bounding-box-area">Bounding box area</h2>
+<p>As most of the annotations cover also most of the wake of the marine vessel, the bounding boxes are significantly larger than a typical boat. There are a few annotations larger than 100 000 m², which are either cruise or cargo ships that are travelling along ordinal directions instead of cardinal directions, instead of e.g.&nbsp;smaller leisure boats.</p>
+<div class="cell" data-execution_count="119">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>all_ships.bbox_area.describe()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="119">
+<pre><code>count      7580.000000
+mean       5606.196180
+std       11257.347462
+min         753.937852
+25%        1717.994773
+50%        2493.311793
+75%        5627.926638
+max      414795.692722
+Name: bbox_area, dtype: float64</code></pre>
+</div>
+</div>
+</section>
+<section id="diameter" class="level2">
+<h2 class="anchored" data-anchor-id="diameter">Diameter</h2>
+<p>Annotations typically have diameter less than 100 meters, and the largest diameters correspond to similar instances than the largest bounding box areas.</p>
+<div class="cell" data-execution_count="120">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>all_ships.diam.describe()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="120">
+<pre><code>count    7580.000000
+mean       95.646706
+std        60.292898
+min        39.061896
+25%        59.296477
+50%        72.101897
+75%       113.827438
+max       913.890352
+Name: diam, dtype: float64</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="aspect-ratio" class="level1">
+<h1>Aspect ratio</h1>
+<p>Aspect ratio measures the ratio of the bounding boxes width to its height. Ratios close to 1 (<span class="math inline">\(10^0\)</span>) mean near-square bounding boxes, ratios less than 1 correspond to boxes whose height is larger than width, and ratios larger than 1 correspond to boxes with height less than width. Overall the distribution of aspect ratios looks quite normal, and most boxes are either square or close to it.</p>
+<div class="cell" data-execution_count="131">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>sns.histplot(all_ships.aspect_ratio, log_scale<span class="op">=</span><span class="va">True</span>, kde<span class="op">=</span><span class="va">True</span>).set_title(<span class="st">'Aspect ratio'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="131">
+<pre><code>Text(0.5, 1.0, 'Aspect ratio')</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="data_creation_files/figure-html/cell-13-output-2.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="training-and-validation-data-generation" class="level1">
+<h1>Training and validation data generation</h1>
+<p><a href="https://mayrajeo.github.io/drone_detector">drone_detector</a> package provides utilities for converting geospatial data to formats accepted by different deep learning frameworks. In this work, <a href="https://github.com/ultralytics/ultralytics">YOLOv8</a> is used as the detection model, so the data must be converted to YOLO format.</p>
+<p>First step is to tile the data into smaller patches. <code>drone_detector.processing.tiling.Tiler</code> does this. Then data is converted to YOLO specifications with <code>drone_detector.processing.yolo.YOLOProcessor</code>.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> drone_detector.processing.tiling <span class="im">import</span> Tiler</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> drone_detector.processing.yolo <span class="im">import</span> <span class="op">*</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>We need to specify some datapaths, tilesize (here 320x320px) and overlap (here (0,0)).</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>tilesize <span class="op">=</span> <span class="dv">320</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>overlap <span class="op">=</span> (<span class="dv">0</span>,<span class="dv">0</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>outpath <span class="op">=</span> Path(<span class="st">'../data/processed/'</span>)</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t <span class="kw">in</span> [<span class="st">'20220619'</span>,<span class="st">'20220721'</span>, <span class="st">'20220813'</span>]:</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    tiler <span class="op">=</span> Tiler(outpath<span class="op">/</span><span class="st">'34VEM'</span><span class="op">/</span>t, gridsize_x<span class="op">=</span>tilesize, gridsize_y<span class="op">=</span>tilesize, overlap<span class="op">=</span>overlap)</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    tiler.tile_raster(image_path<span class="op">/</span><span class="st">'34VEM'</span><span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>t<span class="sc">}</span><span class="ss">.tif'</span>)</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    tiler.tile_vector(shp_path<span class="op">/</span><span class="st">'34VEM'</span><span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>t<span class="sc">}</span><span class="ss">.shp'</span>)</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    cats <span class="op">=</span> [<span class="st">'boat'</span>]</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    yolo_proc <span class="op">=</span> YOLOProcessor(outpath<span class="op">/</span><span class="st">'34VEM'</span><span class="op">/</span>t, outpath<span class="op">/</span><span class="st">'34VEM'</span><span class="op">/</span>t, cats)</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>    yolo_proc.from_shp(<span class="st">'id'</span>, ann_format<span class="op">=</span><span class="st">'box'</span>)</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>grid_34vem <span class="op">=</span> tiler.grid</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t <span class="kw">in</span> [<span class="st">'20220606'</span>,<span class="st">'20220626'</span>, <span class="st">'20220721'</span>]:</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>    tiler <span class="op">=</span> Tiler(outpath<span class="op">/</span><span class="st">'35VLG'</span><span class="op">/</span>t, gridsize_x<span class="op">=</span>tilesize, gridsize_y<span class="op">=</span>tilesize, overlap<span class="op">=</span>overlap)</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>    tiler.tile_raster(image_path<span class="op">/</span><span class="st">'35VLG'</span><span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>t<span class="sc">}</span><span class="ss">.tif'</span>)</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>    tiler.tile_vector(shp_path<span class="op">/</span><span class="st">'35VLG'</span><span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>t<span class="sc">}</span><span class="ss">.shp'</span>)</span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>    cats <span class="op">=</span> [<span class="st">'boat'</span>]</span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>    yolo_proc <span class="op">=</span> YOLOProcessor(outpath<span class="op">/</span><span class="st">'35VLG'</span><span class="op">/</span>t, outpath<span class="op">/</span><span class="st">'35VLG'</span><span class="op">/</span>t, cats)</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>    yolo_proc.from_shp(<span class="st">'id'</span>, ann_format<span class="op">=</span><span class="st">'box'</span>)</span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>grid_35vlg <span class="op">=</span> tiler.grid</span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t <span class="kw">in</span> [<span class="st">'20220627'</span>,<span class="st">'20220712'</span>, <span class="st">'20220828'</span>]:</span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a>    tiler <span class="op">=</span> Tiler(outpath<span class="op">/</span><span class="st">'34WFT'</span><span class="op">/</span>t, gridsize_x<span class="op">=</span>tilesize, gridsize_y<span class="op">=</span>tilesize, overlap<span class="op">=</span>overlap)</span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>    tiler.tile_raster(image_path<span class="op">/</span><span class="st">'34WFT'</span><span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>t<span class="sc">}</span><span class="ss">.tif'</span>)</span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a>    tiler.tile_vector(shp_path<span class="op">/</span><span class="st">'34WFT'</span><span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>t<span class="sc">}</span><span class="ss">.shp'</span>)</span>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a>    cats <span class="op">=</span> [<span class="st">'boat'</span>]</span>
+<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a>    yolo_proc <span class="op">=</span> YOLOProcessor(outpath<span class="op">/</span><span class="st">'34WFT'</span><span class="op">/</span>t, outpath<span class="op">/</span><span class="st">'34WFT'</span><span class="op">/</span>t, cats)</span>
+<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a>    yolo_proc.from_shp(<span class="st">'id'</span>, ann_format<span class="op">=</span><span class="st">'box'</span>)</span>
+<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a>grid_34wft <span class="op">=</span> tiler.grid</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p><code>yaml</code>-file that defines the datasets is still a work in progress so we need to do it manually. Folder format is the following:</p>
+<pre><code>processed-|
+          |tile_id|
+                  |date-|
+                  |     |-images # patches as 320x320px tif files
+                  |     |-labels # annotations in yolo format
+                  |     |-vectors # annotations in geojson format
+                  |     |yolo.yaml # yaml file for yolo dataset for this folder
+          ...
+          |yolo.yaml # we need this file to have both folders in a single dataset
+          |train.txt
+          |val.txt</code></pre>
+<p>From these tiles, split them into five equal sized folds so that:</p>
+<ul>
+<li>All folds contain data from all timesteps and locations</li>
+<li>All patches in both sets are unique to prevent data leakage</li>
+<li>All patches that contain a boat <strong>in any timestep</strong> are taken into account
+<ul>
+<li>Some patches without annotations are then in both sets</li>
+</ul></li>
+</ul>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> random</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>random.seed(<span class="dv">123</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>patch_ids_34VEM <span class="op">=</span> [t[:<span class="op">-</span><span class="dv">4</span>] <span class="cf">for</span> t <span class="kw">in</span> <span class="bu">set</span>().union(<span class="op">*</span>(os.listdir(outpath<span class="op">/</span><span class="st">'34VEM/20220619/labels'</span>),</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>                                                 os.listdir(outpath<span class="op">/</span><span class="st">'34VEM/20220721/labels'</span>),</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>                                                 os.listdir(outpath<span class="op">/</span><span class="st">'34VEM/20220813/labels'</span>)))]</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>patch_ids_35VLG <span class="op">=</span> [t[:<span class="op">-</span><span class="dv">4</span>] <span class="cf">for</span> t <span class="kw">in</span> <span class="bu">set</span>().union(<span class="op">*</span>(os.listdir(outpath<span class="op">/</span><span class="st">'35VLG/20220606/labels'</span>),</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>                                                 os.listdir(outpath<span class="op">/</span><span class="st">'35VLG/20220626/labels'</span>),</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>                                                 os.listdir(outpath<span class="op">/</span><span class="st">'35VLG/20220721/labels'</span>)))]</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>patch_ids_34WFT <span class="op">=</span> [t[:<span class="op">-</span><span class="dv">4</span>] <span class="cf">for</span> t <span class="kw">in</span> <span class="bu">set</span>().union(<span class="op">*</span>(os.listdir(outpath<span class="op">/</span><span class="st">'34WFT/20220627/labels'</span>),</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>                                                 os.listdir(outpath<span class="op">/</span><span class="st">'34WFT/20220712/labels'</span>),</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>                                                 os.listdir(outpath<span class="op">/</span><span class="st">'34WFT/20220828/labels'</span>)))]</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>ixs_34VEM <span class="op">=</span> <span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">0</span>, <span class="bu">len</span>(patch_ids_34VEM)))</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>random.shuffle(ixs_34VEM)</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>folds_34VEM <span class="op">=</span> [patch_ids_34VEM[i::<span class="dv">5</span>] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>)]</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>ixs_35VLG <span class="op">=</span> <span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">0</span>, <span class="bu">len</span>(patch_ids_35VLG)))</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>random.shuffle(ixs_35VLG)</span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>folds_35VLG <span class="op">=</span> [patch_ids_35VLG[i::<span class="dv">5</span>] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>)]</span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>ixs_34WFT <span class="op">=</span> <span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">0</span>, <span class="bu">len</span>(patch_ids_34WFT)))</span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a>random.shuffle(ixs_34WFT)</span>
+<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a>folds_34WFT <span class="op">=</span> [patch_ids_34WFT[i::<span class="dv">5</span>] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>)]</span>
+<span id="cb19-28"><a href="#cb19-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-29"><a href="#cb19-29" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>):</span>
+<span id="cb19-30"><a href="#cb19-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(outpath<span class="op">/</span><span class="ss">f'fold_</span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">.txt'</span>, <span class="st">'w'</span>) <span class="im">as</span> dest:</span>
+<span id="cb19-31"><a href="#cb19-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> folds_34VEM[i]:</span>
+<span id="cb19-32"><a href="#cb19-32" aria-hidden="true" tabindex="-1"></a>            dest.write(<span class="ss">f'</span><span class="sc">{</span>os<span class="sc">.</span>path<span class="sc">.</span>abspath(outpath)<span class="sc">}</span><span class="ss">/34VEM/20220619/images/</span><span class="sc">{</span>j<span class="sc">}</span><span class="ss">.tif</span><span class="ch">\n</span><span class="ss">'</span>)</span>
+<span id="cb19-33"><a href="#cb19-33" aria-hidden="true" tabindex="-1"></a>            dest.write(<span class="ss">f'</span><span class="sc">{</span>os<span class="sc">.</span>path<span class="sc">.</span>abspath(outpath)<span class="sc">}</span><span class="ss">/34VEM/20220721/images/</span><span class="sc">{</span>j<span class="sc">}</span><span class="ss">.tif</span><span class="ch">\n</span><span class="ss">'</span>)</span>
+<span id="cb19-34"><a href="#cb19-34" aria-hidden="true" tabindex="-1"></a>            dest.write(<span class="ss">f'</span><span class="sc">{</span>os<span class="sc">.</span>path<span class="sc">.</span>abspath(outpath)<span class="sc">}</span><span class="ss">/34VEM/20220813/images/</span><span class="sc">{</span>j<span class="sc">}</span><span class="ss">.tif</span><span class="ch">\n</span><span class="ss">'</span>)</span>
+<span id="cb19-35"><a href="#cb19-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> folds_35VLG[i]:</span>
+<span id="cb19-36"><a href="#cb19-36" aria-hidden="true" tabindex="-1"></a>            dest.write(<span class="ss">f'</span><span class="sc">{</span>os<span class="sc">.</span>path<span class="sc">.</span>abspath(outpath)<span class="sc">}</span><span class="ss">/35VLG/20220606/images/</span><span class="sc">{</span>j<span class="sc">}</span><span class="ss">.tif</span><span class="ch">\n</span><span class="ss">'</span>)</span>
+<span id="cb19-37"><a href="#cb19-37" aria-hidden="true" tabindex="-1"></a>            dest.write(<span class="ss">f'</span><span class="sc">{</span>os<span class="sc">.</span>path<span class="sc">.</span>abspath(outpath)<span class="sc">}</span><span class="ss">/35VLG/20220626/images/</span><span class="sc">{</span>j<span class="sc">}</span><span class="ss">.tif</span><span class="ch">\n</span><span class="ss">'</span>)</span>
+<span id="cb19-38"><a href="#cb19-38" aria-hidden="true" tabindex="-1"></a>            dest.write(<span class="ss">f'</span><span class="sc">{</span>os<span class="sc">.</span>path<span class="sc">.</span>abspath(outpath)<span class="sc">}</span><span class="ss">/35VLG/20220721/images/</span><span class="sc">{</span>j<span class="sc">}</span><span class="ss">.tif</span><span class="ch">\n</span><span class="ss">'</span>)</span>
+<span id="cb19-39"><a href="#cb19-39" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> folds_34WFT[i]:</span>
+<span id="cb19-40"><a href="#cb19-40" aria-hidden="true" tabindex="-1"></a>            dest.write(<span class="ss">f'</span><span class="sc">{</span>os<span class="sc">.</span>path<span class="sc">.</span>abspath(outpath)<span class="sc">}</span><span class="ss">/34WFT/20220627/images/</span><span class="sc">{</span>j<span class="sc">}</span><span class="ss">.tif</span><span class="ch">\n</span><span class="ss">'</span>)</span>
+<span id="cb19-41"><a href="#cb19-41" aria-hidden="true" tabindex="-1"></a>            dest.write(<span class="ss">f'</span><span class="sc">{</span>os<span class="sc">.</span>path<span class="sc">.</span>abspath(outpath)<span class="sc">}</span><span class="ss">/34WFT/20220712/images/</span><span class="sc">{</span>j<span class="sc">}</span><span class="ss">.tif</span><span class="ch">\n</span><span class="ss">'</span>)</span>
+<span id="cb19-42"><a href="#cb19-42" aria-hidden="true" tabindex="-1"></a>            dest.write(<span class="ss">f'</span><span class="sc">{</span>os<span class="sc">.</span>path<span class="sc">.</span>abspath(outpath)<span class="sc">}</span><span class="ss">/34WFT/20220828/images/</span><span class="sc">{</span>j<span class="sc">}</span><span class="ss">.tif</span><span class="ch">\n</span><span class="ss">'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Visualize folds</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> ListedColormap</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>grid_34vem[<span class="st">'fold'</span>] <span class="op">=</span> <span class="st">'excluded'</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>grid_35vlg[<span class="st">'fold'</span>] <span class="op">=</span> <span class="st">'excluded'</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>grid_34wft[<span class="st">'fold'</span>] <span class="op">=</span> <span class="st">'excluded'</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>):</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    grid_34vem[<span class="st">'fold'</span>] <span class="op">=</span> grid_34vem.<span class="bu">apply</span>(<span class="kw">lambda</span> row: <span class="ss">f'Fold </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">'</span> <span class="cf">if</span> row.cell <span class="kw">in</span> folds_34VEM[i] <span class="cf">else</span> row.fold, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    grid_35vlg[<span class="st">'fold'</span>] <span class="op">=</span> grid_35vlg.<span class="bu">apply</span>(<span class="kw">lambda</span> row: <span class="ss">f'Fold </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">'</span> <span class="cf">if</span> row.cell <span class="kw">in</span> folds_35VLG[i] <span class="cf">else</span> row.fold, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    grid_34wft[<span class="st">'fold'</span>] <span class="op">=</span> grid_34wft.<span class="bu">apply</span>(<span class="kw">lambda</span> row: <span class="ss">f'Fold </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">'</span> <span class="cf">if</span> row.cell <span class="kw">in</span> folds_34WFT[i] <span class="cf">else</span> row.fold, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">1</span>,<span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">12</span>,<span class="dv">5</span>))</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>cmap <span class="op">=</span> ListedColormap([<span class="st">"#005845"</span>, <span class="st">"#84C497"</span>, <span class="st">"#F28E77"</span>, <span class="st">"#64C1CB"</span>, <span class="st">"#F3A44C"</span>, <span class="st">'white'</span>])</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>grid_34vem.plot(column<span class="op">=</span><span class="st">'fold'</span>, legend<span class="op">=</span><span class="va">False</span>, ax<span class="op">=</span>axs[<span class="dv">0</span>], cmap<span class="op">=</span>cmap).set_title(<span class="st">'34VEM'</span>)</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>grid_35vlg.plot(column<span class="op">=</span><span class="st">'fold'</span>, legend<span class="op">=</span><span class="va">False</span>, ax<span class="op">=</span>axs[<span class="dv">1</span>], cmap<span class="op">=</span>cmap).set_title(<span class="st">'35VLG'</span>)</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>grid_34wft.plot(column<span class="op">=</span><span class="st">'fold'</span>, legend<span class="op">=</span><span class="va">False</span>, ax<span class="op">=</span>axs[<span class="dv">2</span>], cmap<span class="op">=</span>cmap).set_title(<span class="st">'34WFT'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<pre><code>Text(0.5, 1.0, '34WFT')</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="data_creation_files/figure-html/cell-17-output-2.png" class="img-fluid"></p>
+</div>
+</div>
+<p>Finally construct the base <code>yolo.yaml</code> file for the dataset.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(outpath<span class="op">/</span><span class="st">'yolo.yaml'</span>, <span class="st">'w'</span>) <span class="im">as</span> dest:</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    dest.write(<span class="st">'# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3: list: [path/to_imgs1, path_to_imgs2, ..]</span><span class="ch">\n</span><span class="st">'</span>)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    dest.write(<span class="ss">f'path: </span><span class="sc">{</span>os<span class="sc">.</span>path<span class="sc">.</span>abspath(outpath)<span class="sc">}</span><span class="ss">/ # dataset root dir </span><span class="ch">\n</span><span class="ss">'</span>)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    dest.write(<span class="ss">f"train: # train images (relative to 'path')</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    dest.write(<span class="ss">f"  - fold_1.txt</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    dest.write(<span class="ss">f"  - fold_2.txt</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    dest.write(<span class="ss">f"  - fold_3.txt</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    dest.write(<span class="ss">f"  - fold_4.txt</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    dest.write(<span class="ss">f"val: # val images (relative to 'path')</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>    dest.write(<span class="ss">f"  - fold_5.txt</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>    dest.write(<span class="ss">f"test: # test images (relative to 'path')</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>    dest.write(<span class="st">'</span><span class="ch">\n</span><span class="st"># Classes</span><span class="ch">\n</span><span class="st">'</span>)</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    dest.write(<span class="st">'names:</span><span class="ch">\n</span><span class="st">'</span>)</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>    dest.write(<span class="st">'  0: boat'</span>)           </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<nav class="page-navigation column-body">
+  <div class="nav-page nav-page-previous">
+      <a href="./index.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Introduction</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./detection_results.html" class="pagination-link">
+        <span class="nav-page-text">Detection results</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+<script src="site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
