@@ -8,6 +8,7 @@ project:
     - index.ipynb
     - data_creation.ipynb
     - detection_results.ipynb
+    - temporal_analysis.ipynb
     
 format:
   html:
@@ -39,4 +40,5 @@ website:
         file: index.ipynb
       - data_creation.ipynb
       - detection_results.ipynb
+      - temporal_analysis.ipynb
   page-navigation: true
