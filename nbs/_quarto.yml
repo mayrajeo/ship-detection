@@ -40,5 +40,4 @@ website:
         file: index.ipynb
       - data_creation.ipynb
       - detection_results.ipynb
-      - temporal_analysis.ipynb
   page-navigation: true
