@@ -8,7 +8,6 @@ project:
     - index.ipynb
     - data_creation.ipynb
     - detection_results.ipynb
-    - temporal_analysis.ipynb
     
 format:
   html:
@@ -17,8 +16,8 @@ format:
     page-layout: full
     
 website:
-  title: "Ship and boat detection from Sentinel 2 data"
-  description: "Ship and boat detection from Sentinel 2 data"
+  title: "Detecting marine vessels from Sentinel 2 data"
+  description: "Detecting marine vessels from Sentinel 2 data"
   twitter-card:
     creator: "@mayrajeo"
   open-graph: true

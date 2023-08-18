@@ -45,6 +45,7 @@ $code-block-bg: $syke-gray;
 $code-color: $black;
 $code-bg: $syke-gray;
 
+
 // Options
 
 $enable-rounded: false !default;
@@ -63,14 +64,9 @@ $table-border-color: $primary !default;
 
 // Fonts
 $font-family-sans-serif: "Poppins", sans-serif !default;
-$font-size: 12px;
+$font-size-root: 16px;
 
-$h1-font-size:40px;
-$h2-font-size:35px;
-$h3-font-size:30px;
-$h4-font-size:25px;
-$h5-font-size:20px;
-$h6-font-size:15px;
+
 
 // Sidebar
 
@@ -87,6 +83,7 @@ $navbar-fg: $white;
 
 $toc-active-border: $link-color;
 $toc-inactive-border: $primary; 
+
 
 /*-- scss:rules --*/
 
@@ -108,4 +105,65 @@ $toc-inactive-border: $primary;
 
 .figure-caption {
     color: $secondary;
+}
+
+// Contents of styles.css copied here because its the only way to get them to work.
+
+.cell {
+  margin-bottom: 1rem;
+}
+
+.cell > .sourceCode {
+  margin-bottom: 0;
+}
+
+.cell-output > pre {
+  margin-bottom: 0;
+}
+
+.cell-output > pre, .cell-output > .sourceCode > pre, .cell-output-stdout > pre {
+  margin-left: 0.8rem;
+  margin-top: 0;
+  background: none;
+  border-left: 2px solid lightsalmon;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.cell-output > .sourceCode {
+  border: none;
+}
+
+.cell-output > .sourceCode {
+  background: none;
+  margin-top: 0;
+}
+
+div.description {
+  padding-left: 2px;
+  padding-top: 5px;
+  font-style: italic;
+  font-size: 135%;
+  opacity: 70%;
+}
+
+/* show_doc signature */
+blockquote > pre {
+  font-size: 14px;
+  color:#fff;
+}
+
+.table {
+  font-size: 16px;
+  /* disable striped tables */
+  --bs-table-striped-bg: var(--bs-table-bg);
+}
+
+.quarto-figure-center > figure > figcaption {
+  text-align: center;
+}
+
+.figure-caption {
+  font-size: 75%;
+  font-style: italic;
 }
