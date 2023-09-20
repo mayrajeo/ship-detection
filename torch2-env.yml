@@ -1,0 +1,34 @@
+name: torch2-env
+channels:
+  - conda-forge
+  - fastchan
+  - pytorch
+  - nvidia
+dependencies:
+  - conda-forge::pip
+  - fastchan::fastai==2.7.12
+  - pytorch::pytorch==2.0.1
+  - pytorch::pytorch-cuda=11.7
+  - pytorch::torchvision
+  - pytorch::torchaudio
+  - conda-forge::geopandas
+  - conda-forge::rasterio
+  - conda-forge::ipywidgets
+  - pip:
+    - opencv-python
+    - scikit-image
+    - pyarrow
+    - wandb
+    - tensorboard
+    - captum
+    - ultralytics
+    - timm
+    - owslib
+    - openpyxl
+    - seaborn
+    - torchsummary
+    - albumentations
+    - sahi
+    - ensemble-boxes
+    - "git+https://github.com/waspinator/pycococreator.git@0.2.0"
+    - "git+https://github.com/mayrajeo/geo2ml.git"
