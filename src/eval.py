@@ -3,10 +3,13 @@ from pycocotools.cocoeval import COCOeval
 from geo2ml.data.cv import shp_to_coco, shp_to_coco_results
 from fastcore.basics import *
 from pathlib import Path
+import numpy as np
+import os
 
 class GisCOCOeval():
     
-    def __init__(self, data_path:Path, outpath:Path, coco_info:dict, coco_licenses:list, coco_categories:list):
+    def __init__(self, raster_path:Path, vector_path:Path, prediction_path:Path,
+                 outpath:Path, coco_info:dict, coco_licenses:list, coco_categories:list):
         "Initialize evaluator with data path and coco information"
         store_attr()
         self.iou_threshs = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
@@ -14,17 +17,17 @@ class GisCOCOeval():
     def prepare_data(self, gt_label_col:str='label', res_label_col:str='label', 
                      rotated_bbox:bool=False, min_bbox_area:int=0):
         "Convert GIS-data predictions to COCO-format for evaluation, and save resulting files to self.outpath"
-        shp_to_coco(raster_path=self.data_path/'images',
-                    shp_path=self.data_path/'vectors',
-                    outpath=self.outpath/'coco.json',
+        print(os.path.isdir(self.prediction_path))
+        shp_to_coco(raster_path=self.raster_path,
+                    shp_path=self.vector_path,
+                    outpath=self.outpath,
                     label_col=gt_label_col,
                     coco_categories=self.coco_categories,
-                    coco_dict=self.coco_dict,
                     coco_info=self.coco_info,
                     coco_licenses=self.coco_licenses,
                     min_bbox_area=min_bbox_area)
-        shp_to_coco_results(prediction_path=self.data_path/'predictions',
-                            raster_path=self.data_path/'images',
+        shp_to_coco_results(prediction_path=self.prediction_path,
+                            raster_path=self.raster_path,
                             coco_dict=self.outpath/'coco.json',
                             outfile=self.outpath/'coco_res.json',
                             label_col=res_label_col,
@@ -60,7 +63,6 @@ class GisCOCOeval():
 def _summarize_coco(cocoeval:COCOeval): 
     """
     Compute and display summary metrics for evaluation results.
-    Note this functin can *only* be applied on the default parameter setting
     """
     def _summarize(ap=1, iouThr=None, areaRng='all', maxDets=100):
         p = cocoeval.params

@@ -19,19 +19,23 @@ def get_longer_edge(geom:shapely.geometry.Polygon) -> float:
                     shapely.geometry.Point(x[1],y[1]).distance(shapely.geometry.Point(x[2],y[2])))
     return max(edge_lengths)
 
-def clean_stationary_targets(gdf:gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def clean_stationary_targets(gdf:gpd.GeoDataFrame, preset:str=None) -> gpd.GeoDataFrame:
     "Run the postprocessing chain to get rid of obviously false predictions"
     # Clip predictions with topographical database lake and seawater, and stream area classes
     tot_bounds_3067 = list(gdf.to_crs('EPSG:3067').total_bounds)
 
-    lakes = gpd.read_file(PATH_TO_WATERS, layer='jarvi', bbox=tot_bounds_3067).dissolve(by='kohdeluokka')
-    seas = gpd.read_file(PATH_TO_WATERS, layer='meri', bbox=tot_bounds_3067).dissolve(by='kohdeluokka')
-    rivers = gpd.read_file(PATH_TO_RIVERS, layer='virtavesialue', bbox=tot_bounds_3067).dissolve(by='kohdeluokka')
-    lakes = lakes.to_crs(gdf.crs)
-    seas = seas.to_crs(gdf.crs)
-    rivers = rivers.to_crs(gdf.crs)
-    waters = pd.concat([lakes, seas, rivers])
-
+    if preset is None:
+        lakes = gpd.read_file(PATH_TO_WATERS, layer='jarvi', bbox=tot_bounds_3067).dissolve(by='kohdeluokka')
+        seas = gpd.read_file(PATH_TO_WATERS, layer='meri', bbox=tot_bounds_3067).dissolve(by='kohdeluokka')
+        rivers = gpd.read_file(PATH_TO_RIVERS, layer='virtavesialue', bbox=tot_bounds_3067).dissolve(by='kohdeluokka')
+        lakes = lakes.to_crs(gdf.crs)
+        seas = seas.to_crs(gdf.crs)
+        rivers = rivers.to_crs(gdf.crs)
+        waters = pd.concat([lakes, seas, rivers])
+    elif preset == 'archipelago':
+        waters = gpd.read_file(PATH_TO_ARCHI_WATERS, layer='waters')
+    elif preset == 'gof':
+        waters = gpd.read_file(PATH_TO_GOF_WATERS, layer='waters')
     print('Cleaning predictions...')
 
     # Keep only predictions whose centroids are within sea, lake or a largeish river.
@@ -87,9 +91,12 @@ def main(yolov8_weights:str, # Path to yolov8 model weights to use
          outpath:str, # Directory to save the results
          use_cuda:bool, # Whether to use cuda if it is available
          use_tta:bool, # Whether to use Test-time augmentation
+         half:bool, # Whether to use half-precision 
+         postproc:bool, # Whether to clean the predictions or not
          image_size:int=640, # Image size for YOLOv8 model
          slice_size:int=320, # Slice size to use with sahi
          conf_th:float=0.25, # Confidence threshold for predictions
+         preset:str=None, # Area preset for faster filtering
     ):
     "Run YOLOv8 model with sahi for the full S2_L1C -tile and save predictions to `outpath`"
 
@@ -106,6 +113,7 @@ def main(yolov8_weights:str, # Path to yolov8 model weights to use
 
     det_model.model.overrides = {
         'augment': use_tta,
+        'half': half
     #    'imgsz': image_size
     }
     # TODO Clean clouds from images. Either mask them out before predictions or do it afterwards. Shouldn't matter that much?
@@ -131,7 +139,7 @@ def main(yolov8_weights:str, # Path to yolov8 model weights to use
         print('No objects found')
         return
     
-    tfmd_gdf = clean_stationary_targets(tfmd_gdf)
+    if postproc: tfmd_gdf = clean_stationary_targets(tfmd_gdf, preset=preset)
 
     tile_fn = tile.split('/')[-1].split('.')[0]
 
