@@ -1,0 +1,82 @@
+[
+  {
+    "objectID": "detection_results.html",
+    "href": "detection_results.html",
+    "title": "Detection results",
+    "section": "",
+    "text": "Code\nimport matplotlib.pyplot as plt\nimport seaborn as sns\nimport pandas as pd\nimport geopandas as gpd\nfrom pathlib import Path\nimport os\nimport numpy as np\n\nimport warnings\nwarnings.filterwarnings(\"ignore\")\n\nimport sys\nsys.path.insert(1, '..')\nfrom src.colors import *\n\nmodel_path = Path('../runs')",
+    "crumbs": [
+      "Detection results"
+    ]
+  },
+  {
+    "objectID": "detection_results.html#visual-comparisation-of-results",
+    "href": "detection_results.html#visual-comparisation-of-results",
+    "title": "Detection results",
+    "section": "Visual comparisation of results",
+    "text": "Visual comparisation of results\n\n\n\n\n\n\n\n\nFigure 2: Example result comparison for different models",
+    "crumbs": [
+      "Detection results"
+    ]
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Detecting marine vessels from Sentinel-2 imagery using YOLOv8",
+    "section": "",
+    "text": "Abstract\n\nIndication of pressures caused by human activities at sea is needed in estimating their effect to marine habitats and in planning and management of existing and future marine protected areas (MPAs). Pressures caused by commercial maritime traffic can be quantified and localized via their automatic identification system (AIS), whereas the quantity and occurrence of leisure boats remain largely unknown as AIS is not required in smaller vessels. Yet, small vessels often move in shallower areas and cause disturbance to marine habitats by anchoring, resuspension of suspended sediment due to propeller currents, coastal erosion by boat wakes and underwater and above-water noise. In addition, grey water, harmful substances from antifouling paints, and litter, may be introduced to sea areas via leisure boating. To identify and quantify maritime traffic including smaller vessels without AIS, we used YOLOv8, a state-of-the-art object detection model, for detecting marine vessels from openly available Sentinel-2 imagery.\nWe selected five different locations from the Finnish Coast and manually annotated marine vessels from these areas to use as the training and validation data. For each location, we used three separate acquisitions in order to capture more diverse conditions in the sea and different cloud coverage, as well as to identify small vessels from the images. As these objects only cover a couple of pixels, the identification was done by comparing several images and if a potential vessel was not present in all images, it was annotated as long as it covered at least 4 pixels. In total, our dataset contained 8401 annotated marine vessels. The best performing models achieved cross-validation precision of 0.863, recall of 0.841, and mean Average Precision with IoU threshold of 0.5 (mAP50) of 0.867, and test set precision of 0.787, recall of 0.84 and mAP50 of 0.799.\nThe models were then used to evaluate the marine traffic in Archipelago Sea and Gulf of Finland between May and September 2022, using all Sentinel-2 images of sufficient quality (i.e. low cloud coverage) in order to detect and evaluate hotspots of marine traffic, as well as estimate the amount of traffic in different timesteps. The spatiotemporal information drawn from the boat detections supplement existing human pressure datasets by filling the gap in localizing the areas that are in frequent use to small vessels and thus improve the quantification of disturbance from maritime traffic to marine habitats and species. The method is scalable and applicable to other areas as it utilizes openly available satellite images.\n\n\n\nDemo application\nDemo application is running on Huggingface Spaces: https://huggingface.co/spaces/mayrajeo/marine-vessel-detection.\n\n\nAuthors\n\nJanne Mäyrä, Finnish Environment Institute (Syke)\nAri-Pekka Jokinen, Syke\nJoni Koskikala, Marine Conservation, Parks and Wildlife, Finland\nElina A. Virtanen, Syke\nJenni Attila, Syke\n\n\n\nAcknowledgments\nThis work was supported by Enhancing the marine and coastal biodiversity of the Baltic Sea in Finland and promoting the sustainable use of marine resources (BIODIVERSEA LIFE-IP).\nThe authors wish to acknowledge CSC – IT Center for Science, Finland, for computational resources.",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "data_creation.html",
+    "href": "data_creation.html",
+    "title": "Data creation",
+    "section": "",
+    "text": "Code\nimport warnings\nwarnings.filterwarnings(\"ignore\")\n\nimport rasterio as rio\nimport rasterio.plot as rio_plot\nimport matplotlib.pyplot as plt\nimport os\nfrom pathlib import Path\nimport numpy as np\nimport geopandas as gpd\nimport pandas as pd\nfrom shapely.geometry import Point\nimport shapely\nimport seaborn as sns",
+    "crumbs": [
+      "Data creation"
+    ]
+  },
+  {
+    "objectID": "data_creation.html#train-and-validation-areas",
+    "href": "data_creation.html#train-and-validation-areas",
+    "title": "Data creation",
+    "section": "Train and validation areas",
+    "text": "Train and validation areas\n\n\nCode\nfig, axs = plt.subplots(1,3, dpi=200, figsize=(10,5))\nfor t, a in zip(['20220619.tif','20220721.tif', '20220813.tif'], axs):\n    a.axis('off')\n    with rio.open(image_path/'34VEM'/t) as src:\n        rio_plot.show(src, ax=a)\n    ships = gpd.read_file(shp_path/'34VEM.gpkg', layer=t.split('.')[0])\n    ships['geometry'] = ships.geometry.centroid\n    ships.plot(ax=a, color='red', markersize=.5)\n    n_ships = len(ships)\n    ships = None\n    a.set_title(f'{t[:-4]}: {n_ships} vessels')\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\nFigure 2: Archipelago sea\n\n\n\n\n\n\n\nCode\nfig, axs = plt.subplots(1,3, dpi=200, figsize=(10,5))\nfor t, a in zip(['20220606.tif','20220626.tif', '20220721.tif'], axs):\n    a.axis('off')\n    with rio.open(image_path/'35VLG'/t) as src:\n        rio_plot.show(src, ax=a)\n    ships = gpd.read_file(shp_path/'35VLG.gpkg', layer=t.split('.')[0])\n    ships['geometry'] = ships.geometry.centroid\n    ships.plot(ax=a, color='red', markersize=.5)\n    n_ships = len(ships)\n    ships = None\n    a.set_title(f'{t[:-4]}: {n_ships} vessels')\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\nFigure 3: Gulf of Finland\n\n\n\n\n\n\n\nCode\nfig, axs = plt.subplots(1,3, dpi=200, figsize=(10,5))\nfor t, a in zip(['20220627.tif','20220712.tif', '20220828.tif'], axs):\n    a.axis('off')\n    with rio.open(image_path/'34WFT'/t) as src:\n        rio_plot.show(src, ax=a)\n    ships = gpd.read_file(shp_path/'34WFT.gpkg', layer=t.split('.')[0])\n    ships['geometry'] = ships.geometry.centroid\n    ships.plot(ax=a, color='red', markersize=.5)\n    n_ships = len(ships)\n    ships = None\n    a.set_title(f'{t[:-4]}: {n_ships} vessels')\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\nFigure 4: Bothnian bay",
+    "crumbs": [
+      "Data creation"
+    ]
+  },
+  {
+    "objectID": "data_creation.html#test-areas",
+    "href": "data_creation.html#test-areas",
+    "title": "Data creation",
+    "section": "Test areas",
+    "text": "Test areas\n\n\nCode\nfig, axs = plt.subplots(1,3, dpi=200, figsize=(10,5))\nfor t, a in zip(['20210714.tif', '20220624.tif', '20220813.tif'], axs):\n    a.axis('off')\n    with rio.open(image_path/'34VEN'/t) as src:\n        rio_plot.show(src, ax=a)\n    ships = gpd.read_file(shp_path/'34VEN.gpkg', layer=t.split('.')[0])\n    ships['geometry'] = ships.geometry.centroid\n    ships.plot(ax=a, color='red', markersize=.5)\n    n_ships = len(ships)\n    ships = None\n    a.set_title(f'{t[:-4]}: {n_ships} vessels')\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\nFigure 5: Bothnian sea\n\n\n\n\n\n\n\nCode\nfig, axs = plt.subplots(1,3, dpi=200, figsize=(10,5))\nfor t, a in zip(['20220617.tif', '20220712.tif', '20220826.tif'], axs):\n    a.axis('off')\n    with rio.open(image_path/'34VER'/t) as src:\n        rio_plot.show(src, ax=a)\n    ships = gpd.read_file(shp_path/'34VER.gpkg', layer=t.split('.')[0])\n    ships['geometry'] = ships.geometry.centroid\n    ships.plot(ax=a, color='red', markersize=.5)\n    n_ships = len(ships)\n    ships = None\n    a.set_title(f'{t[:-4]}: {n_ships} vessels')\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\nFigure 6: Kvarken",
+    "crumbs": [
+      "Data creation"
+    ]
+  },
+  {
+    "objectID": "data_creation.html#bounding-box-area",
+    "href": "data_creation.html#bounding-box-area",
+    "title": "Data creation",
+    "section": "Bounding box area",
+    "text": "Bounding box area\nAs most of the annotations cover also most of the wake of the marine vessel, the bounding boxes are significantly larger than a typical boat. There are a few annotations larger than 100 000 m², which are either cruise or cargo ships that are travelling along ordinal directions instead of cardinal directions, instead of e.g. smaller leisure boats.\n\n\nCode\nall_ships.bbox_area.describe()\n\n\ncount      7807.000000\nmean       5333.823174\nstd       11058.645055\nmin         699.105819\n25%        1638.231276\n50%        2338.890751\n75%        5215.088449\nmax      414795.692722\nName: bbox_area, dtype: float64",
+    "crumbs": [
+      "Data creation"
+    ]
+  },
+  {
+    "objectID": "data_creation.html#diameter",
+    "href": "data_creation.html#diameter",
+    "title": "Data creation",
+    "section": "Diameter",
+    "text": "Diameter\nAnnotations typically have diameter less than 100 meters, and the largest diameters correspond to similar instances than the largest bounding box areas.\n\n\nCode\nall_ships.diam.describe()\n\n\ncount    7807.000000\nmean       92.808663\nstd        59.275301\nmin        37.873564\n25%        58.007337\n50%        69.643221\n75%       109.002486\nmax       913.890352\nName: diam, dtype: float64",
+    "crumbs": [
+      "Data creation"
+    ]
+  }
+]
