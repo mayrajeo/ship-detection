@@ -29,9 +29,10 @@ def main(tile_id:str, # Tile id to query, for example 34VEM
         if len(matches) == 1: final_products.extend(matches)
         else:
             if len([m for m in matches if 'N0500' in m]) > 0:
-                final_products.append([m for m in matches if 'N0500' in m][0])
-            else: # for some reason there are duplicates, pick the first one
-                final_products.append(matches[0])
+                # If there are products with the latest processing baseline use only them
+                final_products.extend([m for m in matches if 'N0500' in m])
+            else: # for some reason there are duplicates, add all of them
+                final_products.extend(matches)
 
     with open(f'{outpath}/{tile_id}_tileids.txt', 'w') as f:
         for p in final_products: 

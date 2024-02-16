@@ -104,7 +104,7 @@ def main(yolov8_weights:str, # Path to yolov8 model weights to use
     device = 'cuda' if use_cuda and torch.cuda.is_available() else 'cpu'
 
     print(f'Using {device} for predictions...')
-
+    if half: print(f'Using half precision for inference')
     # Initialize model
     det_model = Yolov8DetectionModel(model_path=yolov8_weights,
                                      device=device,
@@ -123,8 +123,8 @@ def main(yolov8_weights:str, # Path to yolov8 model weights to use
                                                 det_model, 
                                                 slice_width=slice_size,
                                                 slice_height=slice_size,
-                                                overlap_height_ratio= 0.2,
-                                                overlap_width_ratio= 0.2,
+                                                overlap_height_ratio=0.2,
+                                                overlap_width_ratio=0.2,
                                                 perform_standard_pred=False,
                                                 verbose=2)
     
