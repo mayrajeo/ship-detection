@@ -1,9 +1,9 @@
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sahi.models.yolov8 import *
 from src.sahi_utils import *
 from src.data_paths import *
+from src.yolov8fix import Yolov8DetectionModel  
 
 from sahi.predict import get_sliced_prediction
 import torch
@@ -41,14 +41,16 @@ def clean_stationary_targets(gdf:gpd.GeoDataFrame, preset:str=None) -> gpd.GeoDa
     # Keep only predictions whose centroids are within sea, lake or a largeish river.
     print('Removing predictions that are not on water')
     gdf['centroids'] = gdf.centroid
+    rem = len(gdf)
+    orig_len = len(gdf)
     gdf.set_geometry('centroids', inplace=True)
     gdf = gdf.sjoin(waters, how='inner', predicate='within')[['label', 'score', 'geometry', 'centroids']]
-
+    n_land = rem - len(gdf)
+    rem = len(gdf)
     # Filter large rock formations from topographical database MTK-muut_22-03-03 layer `vesikivikko`
     print('Removing predictions that are on `vesikivikko`')
     rocks = gpd.read_file(PATH_TO_OTHER, layer='vesikivikko', bbox=tot_bounds_3067).dissolve(by='kohdeluokka')
     rocks = rocks.to_crs(gdf.crs)
-
     # Keep only predictions whose centroids are not within `vesikivikko`
     rock_mask = ~gdf.sjoin(rocks, how='left', predicate='within').index_right.notna()
     gdf = gdf[rock_mask]
@@ -56,13 +58,15 @@ def clean_stationary_targets(gdf:gpd.GeoDataFrame, preset:str=None) -> gpd.GeoDa
     # Revert geometry to bounding boxes and drop unnecessary columns
     gdf.set_geometry('geometry', inplace=True)
     gdf = gdf[['label', 'score', 'geometry']]
-
+    n_vesikivikko = rem - len(gdf)
+    rem = len(gdf)
     # Filter above water rocks
     print('Removing predictions that are rocks above waterline')
     above_water_rocks = gpd.read_file(PATH_TO_OTHER, layer='vesikivi', bbox=tot_bounds_3067).to_crs(gdf.crs)
     above_water_rocks = above_water_rocks[above_water_rocks.kohdeluokka.isin([38511,38512,38513])]
     gdf = gdf.loc[(not any(g.contains(above_water_rocks.geometry)) for g in gdf.geometry)]
-
+    n_above_water = rem - len(gdf)
+    rem = len(gdf)
     # Filter Beacons etc.
     # Sector lights and lighthouses are such beacons that they might be visible from satellite images
     # Turvalaitteet from Väylävirasto and `ty_njr` classes 1, 2, 3 4, 5, 8
@@ -71,18 +75,30 @@ def clean_stationary_targets(gdf:gpd.GeoDataFrame, preset:str=None) -> gpd.GeoDa
     beacons = gpd.read_file(PATH_TO_BEACONS, tot_bounds_3067).to_crs(gdf.crs)
     beacons = beacons[beacons.ty_jnr.isin([1,2,3,4,5,8])]
     gdf = gdf.loc[(not any(g.contains(beacons.geometry)) for g in gdf.geometry)]
-
+    n_beacons = rem - len(gdf)
+    rem = len(gdf)
     # Filter wind turbines provided there is a layer for them
     print('Removing wind turbines')
     windmills = gpd.read_file(PATH_TO_BUILDINGS, layer='tuulivoimala', bbox=tot_bounds_3067).to_crs(gdf.crs)
     gdf = gdf.loc[(not any(g.contains(windmills.geometry)) for g in gdf.geometry)]
-
+    n_turbines = rem - len(gdf)
+    rem = len(gdf)
     # TODO: Filter Aquaqulture and net pens provided there is a layer for them
 
     # Finally remove predictions that have side longer than 750 meters.
     print('Removing predictions that are obviously too large')
     gdf['max_edge'] = gdf.geometry.apply(get_longer_edge)
     gdf = gdf[gdf.max_edge <= 750]
+    n_too_large = rem -len(gdf)
+    print(f"""Summary of cleaning:
+    Original number of predictions: {orig_len}
+    Predictions not on water: {n_land}
+    Predictions in `vesikivikko`: {n_vesikivikko}
+    Predictions contained an above water rock: {n_above_water}
+    Predictions contained a beacon etc: {n_beacons}
+    Predictions contained a wind turbine: {n_turbines}
+    Predictions larger than threshold: {n_too_large}
+    """)
     return gdf
 
 @call_parse
@@ -110,12 +126,14 @@ def main(yolov8_weights:str, # Path to yolov8 model weights to use
                                      device=device,
                                      confidence_threshold=conf_th,
                                      image_size=image_size)
-
-    det_model.model.overrides = {
+    
+    det_model.model.overrides.update({
         'augment': use_tta,
-        'half': half
+        'half': half,
+        'conf': conf_th
     #    'imgsz': image_size
-    }
+    })
+
     # TODO Clean clouds from images. Either mask them out before predictions or do it afterwards. Shouldn't matter that much?
 
     # Get predictions
@@ -149,5 +167,4 @@ def main(yolov8_weights:str, # Path to yolov8 model weights to use
     tfmd_gdf['label'] += 1
 
     print(f'{len(tfmd_gdf)} objects remain.')
-
     tfmd_gdf.to_file(outpath/f'{tile_fn}.geojson', driver='GeoJSON')

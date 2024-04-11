@@ -168,17 +168,32 @@ cython_debug/
 
 # End of https://www.toptal.com/developers/gitignore/api/jupyternotebooks,python
 
-# Project files
+# Project files and folders
 
 models/
-results/
+results*/
+masks/
 wandb/
 data/
+dataset/
+temp/
 _docs/
 .quarto
 secret/
-
-
+gradio_app/
+runs/
+tci/
+sam/
+figures/
+gof/
+archipelago/
+zanzibar/
+bearth/
+evaltest/
+batch_job_scripts/
+presentations/
+yolo_models/
+nb_imgs/
 # QGis project
 
 *.qgz
