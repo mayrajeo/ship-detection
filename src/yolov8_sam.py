@@ -93,7 +93,7 @@ class Yolov8SamDetectionModel(DetectionModel):
                 )
                 result.update(masks=masks.squeeze(1))
 
-        prediction_result = prediction_result = [
+        prediction_result = [
                 (result.boxes.data[result.boxes.data[:, 4] >= self.confidence_threshold], 
                  result.masks.data[result.boxes.data[:, 4] >= self.confidence_threshold])  
                  if result.masks else (torch.tensor([]), torch.tensor([])) for result in prediction_result]
