@@ -2,13 +2,13 @@
 
 Code and documentation repository for Detecting marine vessels from Sentinel-2 imagery using YOLOv8 object detection framework. 
 
-Example app running on [https://huggingface.co/spaces/mayrajeo/marine-vessel-detection](https://huggingface.co/spaces/mayrajeo/marine-vessel-detection). 
+Example app: [https://huggingface.co/spaces/mayrajeo/marine-vessel-detection](https://huggingface.co/spaces/mayrajeo/marine-vessel-detection). 
 
 ## Getting started
 
 ### Installation
 
-TBA
+Install required environment `conda env create -f torch2-env.yml`
 
 ### Data
 
@@ -18,4 +18,4 @@ Reference data were manually annotated by comparing three separate acquisitions 
 
 ### Models
 
-Model weights with best mAP50 score for each YOLOv8 model type are available on [https://huggingface.co/mayrajeo/marine-vessel-detection](https://huggingface.co/mayrajeo/marine-vessel-detection). 
+Model weights and config files with best mAP50 score for each YOLOv8 model architecture are available on [https://huggingface.co/mayrajeo/marine-vessel-detection](https://huggingface.co/mayrajeo/marine-vessel-detection). 

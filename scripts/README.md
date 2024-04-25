@@ -23,3 +23,7 @@ Main training script for the models
 Runs model for large mosaics, and return the predictions as a geojson file. Also cleans the predictions by removing stationary targets and detections outside of water areas. 
 
 Assumes that you have a file `src/data_paths.py` which contain the locations for external datasets, such as Topographic database as geopackage files and Maritime transport, Aids to navigation as a shapefile. 
+
+## evaluate.py
+
+Evaluate models based on predictions for full tiles, and outputs COCO metrics with ultralytics implementations.
