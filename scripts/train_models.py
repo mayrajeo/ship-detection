@@ -1,6 +1,6 @@
 from fastcore.script import *
 from ultralytics import YOLO
-import torch
+import wandb
 
 @call_parse
 def train_model(base_model:str, # Base model to use. Either yolov8n, yolov8s, yolov8m, yolov8l or yolov8x
@@ -13,12 +13,9 @@ def train_model(base_model:str, # Base model to use. Either yolov8n, yolov8s, yo
                 imgsz:int=640, # Image size to use
                 optimizer:str='SGD', # Optimizer to use, one of [SGD, Adam, AdamW, RMSProp]
                 cos_lr:bool=False, # Whether to use cosine annealing
+                pretrained:bool=False, # Whether to use pretrained models or train from scratch
                 ):
     
-    if base_model not in ['yolov8n', 'yolov8s', 'yolov8m', 'yolov8l', 'yolov8x']:
-        print('Invalid base model, defaulting to yolov8s')
-        base_model = 'yolov8s'
-
     if fold_to_use < 1 or fold_to_use > 5:
         print('Invalid fold, defaulting to 1')
         fold_to_use = 1
@@ -57,10 +54,13 @@ def train_model(base_model:str, # Base model to use. Either yolov8n, yolov8s, yo
     opt = optimizer_params[optimizer]
 
     print(f'Starting to train with parameters {base_model} {optimizer} {fold_to_use}')
+    wandb.init(project='ultralytics_marinevessels_2024', job_type='training', 
+               name=f'{base_model}_fold_{fold_to_use}_{"pt" if pretrained else "scratch"}')
     
     # Replace model path and project folder with your own
-    model = YOLO(f'/scratch/project_2007454/ship_detection/yolo_models/{base_model}.pt')
-    model.model = torch.compile(model.model)
+    model_file = f'/scratch/project_2007454/ship_detection/yolo_models/{base_model}.pt' if pretrained else f'{base_model}.yaml'
+
+    model = YOLO(model_file)
     results = model.train(data=f'{data_path}/yolo_fold{fold_to_use}.yaml',
                           epochs=epochs,
                           patience=patience,
@@ -68,6 +68,7 @@ def train_model(base_model:str, # Base model to use. Either yolov8n, yolov8s, yo
                           batch=batch,
                           project=f'/scratch/project_2007454/ship_detection/{outdir}/{base_model}_{optimizer}',
                           name=f'fold_{fold_to_use}',
+                          pretrained=pretrained,
                           cache='ram',
                           exist_ok=True,
                           optimizer=optimizer,
@@ -79,3 +80,4 @@ def train_model(base_model:str, # Base model to use. Either yolov8n, yolov8s, yo
                           device=0,
                           scale=0.25,
                           flipud=0.5)
+wandb.finish()

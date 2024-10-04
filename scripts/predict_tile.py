@@ -3,7 +3,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.sahi_utils import *
 from src.data_paths import *
-from src.yolov8fix import Yolov8DetectionModel  
+from sahi.models.yolov8 import Yolov8DetectionModel
 
 from sahi.predict import get_sliced_prediction
 import torch
@@ -12,6 +12,7 @@ from pathlib import Path
 import pandas as pd
 import geopandas as gpd
 import shapely
+from time import time
 
 def get_longer_edge(geom:shapely.geometry.Polygon) -> float:
     x, y = shapely.geometry.box(*geom.bounds).exterior.coords.xy
@@ -22,8 +23,8 @@ def get_longer_edge(geom:shapely.geometry.Polygon) -> float:
 def clean_stationary_targets(gdf:gpd.GeoDataFrame, preset:str=None) -> gpd.GeoDataFrame:
     "Run the postprocessing chain to get rid of obviously false predictions"
     # Clip predictions with topographical database lake and seawater, and stream area classes
-    tot_bounds_3067 = list(gdf.to_crs('EPSG:3067').total_bounds)
-
+    tot_bounds_3067 = tuple(gdf.to_crs('EPSG:3067').total_bounds)
+    start = time()
     if preset is None:
         lakes = gpd.read_file(PATH_TO_WATERS, layer='jarvi', bbox=tot_bounds_3067).dissolve(by='kohdeluokka')
         seas = gpd.read_file(PATH_TO_WATERS, layer='meri', bbox=tot_bounds_3067).dissolve(by='kohdeluokka')
@@ -36,64 +37,95 @@ def clean_stationary_targets(gdf:gpd.GeoDataFrame, preset:str=None) -> gpd.GeoDa
         waters = gpd.read_file(PATH_TO_ARCHI_WATERS, layer='waters')
     elif preset == 'gof':
         waters = gpd.read_file(PATH_TO_GOF_WATERS, layer='waters')
+    elif preset in ['34VER', '34VEN']:
+        waters = gpd.read_file(f'{PATH_TO_MTK_DATA}/{preset}_waters.gpkg', layer='waters').to_crs(gdf.crs)
     print('Cleaning predictions...')
 
     # Keep only predictions whose centroids are within sea, lake or a largeish river.
     print('Removing predictions that are not on water')
-    gdf['centroids'] = gdf.centroid
+
+    # Add variables for logging
     rem = len(gdf)
     orig_len = len(gdf)
+    n_vesikivikko = 0
+    n_too_large = 0
+    n_above_water = 0
+    n_land = 0
+    n_beacons = 0
+    n_turbines = 0
+    n_fisheries = 0
+
+    # Set geometries to centroid points for filtering based on area
+    gdf['centroids'] = gdf.centroid
     gdf.set_geometry('centroids', inplace=True)
     gdf = gdf.sjoin(waters, how='inner', predicate='within')[['label', 'score', 'geometry', 'centroids']]
     n_land = rem - len(gdf)
     rem = len(gdf)
     # Filter large rock formations from topographical database MTK-muut_22-03-03 layer `vesikivikko`
-    print('Removing predictions that are on `vesikivikko`')
-    rocks = gpd.read_file(PATH_TO_OTHER, layer='vesikivikko', bbox=tot_bounds_3067).dissolve(by='kohdeluokka')
-    rocks = rocks.to_crs(gdf.crs)
-    # Keep only predictions whose centroids are not within `vesikivikko`
-    rock_mask = ~gdf.sjoin(rocks, how='left', predicate='within').index_right.notna()
-    gdf = gdf[rock_mask]
+    if rem > 0:
+        print('Removing predictions that are on `vesikivikko`')
+        rocks = gpd.read_file(PATH_TO_OTHER, layer='vesikivikko', bbox=tot_bounds_3067).dissolve(by='kohdeluokka')
+        rocks = rocks.to_crs(gdf.crs)
+        # Keep only predictions whose centroids are not within `vesikivikko`
+        joined = gpd.sjoin(gdf, rocks, predicate='within', how='inner')
+        gdf = gdf[~gdf.index.isin(joined.index)]
+        n_vesikivikko = rem - len(gdf)
+        rem = len(gdf)
+
+    if rem > 0:
+        print('Removing fisheries')
+        # Keep only predictions whose centroids are not within fishery areas
+        fisheries = gpd.read_file(PATH_TO_FISHERIES, bbox=tot_bounds_3067).to_crs(gdf.crs)
+        joined = gpd.sjoin(gdf, fisheries, predicate='within', how='inner')
+        gdf = gdf[~gdf.index.isin(joined.index)]
+        n_fisheries = rem - len(gdf)
+        rem = len(gdf)
 
     # Revert geometry to bounding boxes and drop unnecessary columns
     gdf.set_geometry('geometry', inplace=True)
     gdf = gdf[['label', 'score', 'geometry']]
-    n_vesikivikko = rem - len(gdf)
-    rem = len(gdf)
     # Filter above water rocks
-    print('Removing predictions that are rocks above waterline')
-    above_water_rocks = gpd.read_file(PATH_TO_OTHER, layer='vesikivi', bbox=tot_bounds_3067).to_crs(gdf.crs)
-    above_water_rocks = above_water_rocks[above_water_rocks.kohdeluokka.isin([38511,38512,38513])]
-    gdf = gdf.loc[(not any(g.contains(above_water_rocks.geometry)) for g in gdf.geometry)]
-    n_above_water = rem - len(gdf)
-    rem = len(gdf)
+    if rem > 0:
+        print('Removing predictions that are rocks above waterline')
+        above_water_rocks = gpd.read_file(PATH_TO_OTHER, layer='vesikivi', bbox=tot_bounds_3067).to_crs(gdf.crs)
+        above_water_rocks = above_water_rocks[above_water_rocks.kohdeluokka.isin([38511,38512,38513])]
+        gdf = gdf.loc[(not any(g.contains(above_water_rocks.geometry)) for g in gdf.geometry)]
+        n_above_water = rem - len(gdf)
+        rem = len(gdf)
+
     # Filter Beacons etc.
     # Sector lights and lighthouses are such beacons that they might be visible from satellite images
     # Turvalaitteet from Väylävirasto and `ty_njr` classes 1, 2, 3 4, 5, 8
     # Description: https://ava.vaylapilvi.fi/ava/Vesi/Tietokuvaus/vesivayla-aineistot_tietosisallonkuvaus.pdf
-    print('Removing predictions that are either beacons or lighthouses')
-    beacons = gpd.read_file(PATH_TO_BEACONS, tot_bounds_3067).to_crs(gdf.crs)
-    beacons = beacons[beacons.ty_jnr.isin([1,2,3,4,5,8])]
-    gdf = gdf.loc[(not any(g.contains(beacons.geometry)) for g in gdf.geometry)]
-    n_beacons = rem - len(gdf)
-    rem = len(gdf)
-    # Filter wind turbines provided there is a layer for them
-    print('Removing wind turbines')
-    windmills = gpd.read_file(PATH_TO_BUILDINGS, layer='tuulivoimala', bbox=tot_bounds_3067).to_crs(gdf.crs)
-    gdf = gdf.loc[(not any(g.contains(windmills.geometry)) for g in gdf.geometry)]
-    n_turbines = rem - len(gdf)
-    rem = len(gdf)
-    # TODO: Filter Aquaqulture and net pens provided there is a layer for them
+    if rem > 0:
+        print('Removing predictions that are either beacons or lighthouses')
+        beacons = gpd.read_file(PATH_TO_BEACONS, tot_bounds_3067).to_crs(gdf.crs)
+        beacons = beacons[beacons.ty_jnr.isin([1,2,3,4,5,8])]
+        gdf = gdf.loc[(not any(g.contains(beacons.geometry)) for g in gdf.geometry)]
+        n_beacons = rem - len(gdf)
+        rem = len(gdf)
 
-    # Finally remove predictions that have side longer than 750 meters.
-    print('Removing predictions that are obviously too large')
-    gdf['max_edge'] = gdf.geometry.apply(get_longer_edge)
-    gdf = gdf[gdf.max_edge <= 750]
-    n_too_large = rem -len(gdf)
-    print(f"""Summary of cleaning:
+    if rem > 0:
+        # Filter wind turbines provided there is a layer for them
+        print('Removing wind turbines')
+        windmills = gpd.read_file(PATH_TO_BUILDINGS, layer='tuulivoimala', bbox=tot_bounds_3067).to_crs(gdf.crs)
+        gdf = gdf.loc[(not any(g.contains(windmills.geometry)) for g in gdf.geometry)]
+        n_turbines = rem - len(gdf)
+        rem = len(gdf)
+        # TODO: Filter Aquaqulture and net pens provided there is a layer for them
+    if rem > 0:
+        # Finally remove predictions that have side longer than 750 meters.
+        print('Removing predictions that are obviously too large')
+        gdf['max_edge'] = gdf.geometry.apply(get_longer_edge)
+        gdf = gdf[gdf['max_edge'] <= 750]
+        n_too_large = rem -len(gdf)
+        
+    end = time()
+    print(f"""Summary of cleaning, took {end-start:.4f} seconds:
     Original number of predictions: {orig_len}
-    Predictions not on water: {n_land}
-    Predictions in `vesikivikko`: {n_vesikivikko}
+    Predictions on land: {n_land}
+    Predictions on `vesikivikko`: {n_vesikivikko}
+    Predictions that are fisheries: {n_fisheries}
     Predictions contained an above water rock: {n_above_water}
     Predictions contained a beacon etc: {n_beacons}
     Predictions contained a wind turbine: {n_turbines}
