@@ -1,6 +1,7 @@
+from geo2ml.data.coordinates import *
 import geopandas as gpd 
 from shapely.geometry import box, Polygon, MultiPolygon
-from geo2ml.data.coordinates import *
+
 
 def georef_sahi_preds(preds, path_to_ref_img, result_type='bbox') -> gpd.GeoDataFrame:
     "Converts a list of `ObjectPredictions` to a geodataframe, georeferenced according to reference image"

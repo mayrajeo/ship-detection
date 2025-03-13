@@ -3,7 +3,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.sahi_utils import *
 from src.data_paths import *
-from sahi.models.yolov8 import Yolov8DetectionModel
+from sahi.models.ultralytics import UltralyticsDetectionModel
 
 from sahi.predict import get_sliced_prediction
 import torch
@@ -20,7 +20,7 @@ def get_longer_edge(geom:shapely.geometry.Polygon) -> float:
                     shapely.geometry.Point(x[1],y[1]).distance(shapely.geometry.Point(x[2],y[2])))
     return max(edge_lengths)
 
-def clean_stationary_targets(gdf:gpd.GeoDataFrame, preset:str=None) -> gpd.GeoDataFrame:
+def clean_stationary_targets(gdf:gpd.GeoDataFrame, preset:str=None, keep_fps:bool=False) -> gpd.GeoDataFrame:
     "Run the postprocessing chain to get rid of obviously false predictions"
     # Clip predictions with topographical database lake and seawater, and stream area classes
     tot_bounds_3067 = tuple(gdf.to_crs('EPSG:3067').total_bounds)
@@ -54,11 +54,15 @@ def clean_stationary_targets(gdf:gpd.GeoDataFrame, preset:str=None) -> gpd.GeoDa
     n_beacons = 0
     n_turbines = 0
     n_fisheries = 0
-
+    fps = None
+    
     # Set geometries to centroid points for filtering based on area
     gdf['centroids'] = gdf.centroid
     gdf.set_geometry('centroids', inplace=True)
-    gdf = gdf.sjoin(waters, how='inner', predicate='within')[['label', 'score', 'geometry', 'centroids']]
+    joined = gdf.sjoin(waters, how='inner', predicate='within')[['label', 'score', 'geometry', 'centroids']]
+    fps = gdf[~gdf.index.isin(joined.index)].copy()
+    fps['id'] = 'land'
+    gdf = gdf[gdf.index.isin(joined.index)]
     n_land = rem - len(gdf)
     rem = len(gdf)
     # Filter large rock formations from topographical database MTK-muut_22-03-03 layer `vesikivikko`
@@ -68,7 +72,14 @@ def clean_stationary_targets(gdf:gpd.GeoDataFrame, preset:str=None) -> gpd.GeoDa
         rocks = rocks.to_crs(gdf.crs)
         # Keep only predictions whose centroids are not within `vesikivikko`
         joined = gpd.sjoin(gdf, rocks, predicate='within', how='inner')
-        gdf = gdf[~gdf.index.isin(joined.index)]
+        if fps is None:
+            fps = gdf[gdf.index.isin(joined.index)].copy()
+            fps['id'] = 'rock'
+        else:
+            temp = gdf[gdf.index.isin(joined.index)].copy()
+            temp['id'] = 'rock'
+            fps = pd.concat([fps,temp])
+        gdf = gdf[~gdf.index.isin(joined.index)].copy()
         n_vesikivikko = rem - len(gdf)
         rem = len(gdf)
 
@@ -77,19 +88,37 @@ def clean_stationary_targets(gdf:gpd.GeoDataFrame, preset:str=None) -> gpd.GeoDa
         # Keep only predictions whose centroids are not within fishery areas
         fisheries = gpd.read_file(PATH_TO_FISHERIES, bbox=tot_bounds_3067).to_crs(gdf.crs)
         joined = gpd.sjoin(gdf, fisheries, predicate='within', how='inner')
+        if fps is None:
+            fps = gdf[gdf.index.isin(joined.index)].copy()
+            fps['id'] = 'fishery'
+        else:
+            temp = gdf[gdf.index.isin(joined.index)].copy()
+            temp['id'] = 'fishery'
+            fps = pd.concat([fps, temp])
         gdf = gdf[~gdf.index.isin(joined.index)]
         n_fisheries = rem - len(gdf)
         rem = len(gdf)
 
     # Revert geometry to bounding boxes and drop unnecessary columns
     gdf.set_geometry('geometry', inplace=True)
-    gdf = gdf[['label', 'score', 'geometry']]
+    gdf = gdf[['id', 'label', 'score', 'geometry']]
+    if fps is not None:
+        fps.set_geometry('geometry', inplace=True)
+        fps = fps[['label', 'score', 'geometry', 'id']]
     # Filter above water rocks
     if rem > 0:
         print('Removing predictions that are rocks above waterline')
         above_water_rocks = gpd.read_file(PATH_TO_OTHER, layer='vesikivi', bbox=tot_bounds_3067).to_crs(gdf.crs)
         above_water_rocks = above_water_rocks[above_water_rocks.kohdeluokka.isin([38511,38512,38513])]
+        if fps is None:
+            fps = gdf.loc[(any(g.contains(above_water_rocks.geometry)) for g in gdf.geometry)].copy()
+            fps['id'] = 'rocks'
+        else:
+            temp = gdf.loc[(any(g.contains(above_water_rocks.geometry)) for g in gdf.geometry)].copy()
+            temp['id'] = 'rocks'
+            fps = pd.concat([fps, temp])
         gdf = gdf.loc[(not any(g.contains(above_water_rocks.geometry)) for g in gdf.geometry)]
+
         n_above_water = rem - len(gdf)
         rem = len(gdf)
 
@@ -101,6 +130,13 @@ def clean_stationary_targets(gdf:gpd.GeoDataFrame, preset:str=None) -> gpd.GeoDa
         print('Removing predictions that are either beacons or lighthouses')
         beacons = gpd.read_file(PATH_TO_BEACONS, tot_bounds_3067).to_crs(gdf.crs)
         beacons = beacons[beacons.ty_jnr.isin([1,2,3,4,5,8])]
+        if fps is None:
+            fps = gdf.loc[(any(g.contains(beacons.geometry)) for g in gdf.geometry)].copy()
+            fps['id'] = 'beacon'
+        else:
+            temp = gdf.loc[(any(g.contains(beacons.geometry)) for g in gdf.geometry)].copy()
+            temp['id'] = 'beacon'
+            fps = pd.concat([fps, temp])
         gdf = gdf.loc[(not any(g.contains(beacons.geometry)) for g in gdf.geometry)]
         n_beacons = rem - len(gdf)
         rem = len(gdf)
@@ -109,17 +145,31 @@ def clean_stationary_targets(gdf:gpd.GeoDataFrame, preset:str=None) -> gpd.GeoDa
         # Filter wind turbines provided there is a layer for them
         print('Removing wind turbines')
         windmills = gpd.read_file(PATH_TO_BUILDINGS, layer='tuulivoimala', bbox=tot_bounds_3067).to_crs(gdf.crs)
+        if fps is None:
+            fps = gdf.loc[(any(g.contains(windmills.geometry)) for g in gdf.geometry)].copy()
+            fps['id'] = 'windmill'
+        else:
+            temp = gdf.loc[(any(g.contains(windmills.geometry)) for g in gdf.geometry)].copy()
+            temp['id'] = 'windmill'
+            fps = pd.concat([fps, temp])
         gdf = gdf.loc[(not any(g.contains(windmills.geometry)) for g in gdf.geometry)]
         n_turbines = rem - len(gdf)
         rem = len(gdf)
-        # TODO: Filter Aquaqulture and net pens provided there is a layer for them
+
     if rem > 0:
         # Finally remove predictions that have side longer than 750 meters.
         print('Removing predictions that are obviously too large')
         gdf['max_edge'] = gdf.geometry.apply(get_longer_edge)
+        if fps is None:
+            fps = gdf[gdf['max_edge'] > 750].copy()
+            fps['id'] = 'size'
+        else:
+            temp = gdf[gdf['max_edge'] > 750].copy()
+            temp['id'] = 'size'
+            fps = pd.concat([fps, temp])
         gdf = gdf[gdf['max_edge'] <= 750]
         n_too_large = rem -len(gdf)
-        
+
     end = time()
     print(f"""Summary of cleaning, took {end-start:.4f} seconds:
     Original number of predictions: {orig_len}
@@ -131,6 +181,10 @@ def clean_stationary_targets(gdf:gpd.GeoDataFrame, preset:str=None) -> gpd.GeoDa
     Predictions contained a wind turbine: {n_turbines}
     Predictions larger than threshold: {n_too_large}
     """)
+
+    if keep_fps:
+        fps = fps[['id', 'label', 'score', 'geometry']]
+        gdf = pd.concat([gdf, fps])
     return gdf
 
 @call_parse
@@ -141,9 +195,10 @@ def main(yolov8_weights:str, # Path to yolov8 model weights to use
          use_tta:bool, # Whether to use Test-time augmentation
          half:bool, # Whether to use half-precision 
          postproc:bool, # Whether to clean the predictions or not
+         keep_fps:bool, # Whether to keep the cleaned fps in the results
          image_size:int=640, # Image size for YOLOv8 model
          slice_size:int=320, # Slice size to use with sahi
-         conf_th:float=0.25, # Confidence threshold for predictions
+         conf_th:float=0.001, # Confidence threshold for predictions
          preset:str=None, # Area preset for faster filtering
     ):
     "Run YOLOv8 model with sahi for the full S2_L1C -tile and save predictions to `outpath`"
@@ -154,16 +209,15 @@ def main(yolov8_weights:str, # Path to yolov8 model weights to use
     print(f'Using {device} for predictions...')
     if half: print(f'Using half precision for inference')
     # Initialize model
-    det_model = Yolov8DetectionModel(model_path=yolov8_weights,
-                                     device=device,
-                                     confidence_threshold=conf_th,
-                                     image_size=image_size)
+    det_model = UltralyticsDetectionModel(model_path=yolov8_weights,
+                                          device=device,
+                                          confidence_threshold=conf_th,
+                                          image_size=image_size)
     
     det_model.model.overrides.update({
         'augment': use_tta,
         'half': half,
         'conf': conf_th
-    #    'imgsz': image_size
     })
 
     # TODO Clean clouds from images. Either mask them out before predictions or do it afterwards. Shouldn't matter that much?
@@ -188,8 +242,6 @@ def main(yolov8_weights:str, # Path to yolov8 model weights to use
     if len(tfmd_gdf) == 0: 
         print('No objects found')
         return
-    
-    if postproc: tfmd_gdf = clean_stationary_targets(tfmd_gdf, preset=preset)
 
     tile_fn = tile.split('/')[-1].split('.')[0]
 
@@ -197,6 +249,9 @@ def main(yolov8_weights:str, # Path to yolov8 model weights to use
     tfmd_gdf = tfmd_gdf[['label', 'score', 'geometry']]
     tfmd_gdf['id'] = 'boat'
     tfmd_gdf['label'] += 1
+
+    if postproc: 
+        tfmd_gdf = clean_stationary_targets(tfmd_gdf, preset=preset,keep_fps=keep_fps)
 
     print(f'{len(tfmd_gdf)} objects remain.')
     tfmd_gdf.to_file(outpath/f'{tile_fn}.geojson', driver='GeoJSON')
