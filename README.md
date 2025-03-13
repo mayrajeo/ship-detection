@@ -1,8 +1,10 @@
-# Detecting marine vessels from Sentinel-2 imagery with YOLOv8
+# Detecting marine vessels from Sentinel-2 imagery with YOLO object detection models
 
-Code and documentation repository for Detecting marine vessels from Sentinel-2 imagery using YOLOv8 object detection framework. 
+Code and documentation repository for Detecting marine vessels from Sentinel-2 imagery using ultralytics object detection framework. 
 
 Example app: [https://huggingface.co/spaces/mayrajeo/marine-vessel-detection](https://huggingface.co/spaces/mayrajeo/marine-vessel-detection). 
+
+Update to latest version in progress.
 
 ## Getting started
 
