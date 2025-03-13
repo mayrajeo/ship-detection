@@ -10,7 +10,7 @@ Update to latest version in progress.
 
 ### Installation
 
-Install required environment `conda env create -f torch2-env.yml`
+Install required environment `conda env create -f ship-env.yml`
 
 ### Data
 

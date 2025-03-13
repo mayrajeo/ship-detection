@@ -6,7 +6,7 @@ project:
     browser: false
   render:
     - index.ipynb
-    - data_creation.ipynb
+    - data_creation-revision.ipynb
     - detection_results.ipynb
     - test_area_observations.ipynb
     
@@ -19,8 +19,6 @@ format:
 website:
   title: "Detecting marine vessels from Sentinel 2 data"
   description: "Detecting marine vessels from Sentinel 2 data"
-  twitter-card:
-    creator: "@mayrajeo"
   open-graph: true
   reader-mode: true
   repo-branch: main
@@ -38,7 +36,7 @@ website:
     contents:
       - text: Introduction
         file: index.ipynb
-      - data_creation.ipynb
+      - data_creation-revision.ipynb
       - detection_results.ipynb
       - test_area_observations.ipynb
   page-navigation: true
