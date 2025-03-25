@@ -1,23 +1,26 @@
 import requests
 import json
-from tqdm import tqdm
-import os.path
 from getpass import getpass
-import tempfile
-import zipfile
 import logging
 import rasterio as rio
 from rasterio.io import MemoryFile
 import io
 
 from fastcore.script import *
+from fastcore.basics import *
 
 class FileDownloader:
     # initialize logger
     logger = logging.getLogger(__name__)
 
     def __init__(self, username=None, password=None, creds_file=None):
+        store_attr()
+        self.token_data = self.generate_token_data(self.username, self.password, self.creds_file)
+        self.session = requests.Session()
+        self.token, self.rtoken = self.get_keycloak_token(self.token_data)
+        self.response = None
 
+    def generate_token_data(self, username=None, password=None, creds_file=None):
         if username is not None and password is not None:
             data = {'grant_type': 'password', 'username': username, 'password': password, 'client_id': 'cdse-public'}
         if creds_file is not None:
@@ -29,20 +32,36 @@ class FileDownloader:
             username = input('Username: ')
             password = getpass()
             data = {'grant_type': 'password', 'username': username, 'password': password, 'client_id': 'cdse-public'}
-
-        self.token = self.get_keycloak_token(data)
-        self.response = None
+        return data
 
     def get_keycloak_token(self, data):
         url = 'https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token'
         try:
-            response = requests.post(url, data=data)
+            response = self.session.post(url, data=data)
             response.raise_for_status()
         except Exception as e:
             raise Exception(
                 f'Keycloak token creation failed. Response from the server was: {response.json()}'
             )
-        return response.json()['access_token']
+        access_token = response.json()['access_token']
+        rtoken = response.json()['refresh_token']
+        return access_token, rtoken
+
+    def refresh_token(self):
+        url = 'https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token'
+        data = {'grant_type': 'refresh_token', 'refresh_token': self.rtoken, 'client_id': 'cdse-public'}
+        try:
+            response = self.session.post(url, data)
+            response.raise_for_status()
+            self.token = response.json()['access_token']
+            self.rtoken = response.json()['refresh_token']
+        except Exception as e:
+            self.logger.info(f'Refreshing token failed. Response from the server was: {response.json}')
+            self.logger.info('Creating new keycloak token')
+            access_token, rtoken = self.get_keycloak_token(self.token_data)
+            self.token = access_token
+            self.rtoken = rtoken
+        return
 
     def download_latest_response(self, target_path='/tmp'):
         for idx, val in enumerate(self.response['value']):
@@ -59,7 +78,7 @@ class FileDownloader:
         t = json.loads(response.text)
         parts = name[:-5].split('_')
         identifier = '_'.join([parts[5], parts[2]])
-        next_url = t['result'][0]['Nodes']['uri'] + f'(IMG_DATA)/Nodes(R10m)/Nodes({identifier}_TCI_10m.jp2)/$value'
+        next_url = t['result'][0]['Nodes']['uri'] + f'(IMG_DATA)/Nodes({identifier}_TCI.jp2)/$value'
         response = requests.get(f'{next_url}', headers=headers, stream=True)
         im = io.BytesIO(response.content)
         with MemoryFile(im) as memfile:
@@ -78,7 +97,6 @@ class FileDownloader:
         response = requests.get(url)  # doesn't require token authentication
         self.response = json.loads(response.text)
         return json.loads(response.text)
-
 
 @call_parse
 def main(product_name:str, # Product name to download
