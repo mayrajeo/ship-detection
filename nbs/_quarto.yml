@@ -7,7 +7,7 @@ project:
   render:
     - index.ipynb
     - data_creation-revision.ipynb
-    - dataset_conversion.iypnb
+    - dataset_conversion.ipynb
     
 format:
   html:
