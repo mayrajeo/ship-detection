@@ -8,8 +8,6 @@ project:
     - index.ipynb
     - data_creation-revision.ipynb
     - dataset_conversion.iypnb
-    #- detection_results.ipynb
-    #- test_area_observations.ipynb
     
 format:
   html:
@@ -39,6 +37,4 @@ website:
         file: index.ipynb
       - data_creation-revision.ipynb
       - dataset_conversion.ipynb
-      #- detection_results.ipynb
-      #- test_area_observations.ipynb
   page-navigation: true
