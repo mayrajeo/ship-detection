@@ -8,6 +8,7 @@ project:
     - index.ipynb
     - data_creation-revision.ipynb
     - dataset_conversion.ipynb
+    - inference.ipynb
     
 format:
   html:
@@ -37,4 +38,5 @@ website:
         file: index.ipynb
       - data_creation-revision.ipynb
       - dataset_conversion.ipynb
+      - inference.ipynb
   page-navigation: true
