@@ -17,8 +17,8 @@ format:
     page-layout: full
     
 website:
-  title: "Detecting marine vessels from Sentinel 2 data"
-  description: "Detecting marine vessels from Sentinel 2 data"
+  title: "Mapping recreational marine traffic from Sentinel-2 imagery using YOLO object detection models"
+  description: "Mapping recreational marine traffic from Sentinel-2 imagery using YOLO object detection models"
   open-graph: true
   reader-mode: true
   repo-branch: main
