@@ -6,13 +6,14 @@ import json
 def main(tile_id:str, # Tile id to query, for example 34VEM
          start_date:str, # Start date for query, format yyyy-mm-dd
          end_date:str, # End date for query, format yyyy-mm-dd
+         product_type:str='1C', # Which product type to download
          cloud_cover:int=20, # Maximum cloud cover percentage, default 20
          outpath:str='.' # Where to save the resulting product id list, default '.'
          ):
     
     base_url = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products?$filter=(startswith(Name,'S2') "
     instrument = "and (Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'instrumentShortName' and att/OData.CSC.StringAttribute/Value eq 'MSI') "
-    product = "and Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq 'S2MSI1C') "
+    product = f"and Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq 'S2MSI{product_type}') "
     tile = f"and Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tile_id}'))) "
     cloud = f"and Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {cloud_cover}.00) "
     start = f"and ContentDate/Start ge {start_date}T00:00:00.000Z "
@@ -28,7 +29,9 @@ def main(tile_id:str, # Tile id to query, for example 34VEM
         matches = [p for p in products if t in p]
         if len(matches) == 1: final_products.extend(matches)
         else:
-            if len([m for m in matches if 'N0500' in m]) > 0:
+            if len([m for m in matches if 'N0510' in m]) > 0:
+                final_products.extend([m for m in matches if 'N0510' in m])
+            elif len([m for m in matches if 'N0500' in m]) > 0:
                 # If there are products with the latest processing baseline use only them
                 final_products.extend([m for m in matches if 'N0500' in m])
             else: # for some reason there are duplicates, add all of them
